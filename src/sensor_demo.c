@@ -3,7 +3,7 @@
 #include "../MCAL/Timer/timer_interface.h"
 #include "../MCAL/UART/uart_interface.h"
 #include "../HAL/Sensors/Sensors_Driver.h"
-#include "../LOGIC/Scheduler_Module/Scheduler_Module.h"
+#include "../Micro/Scheduler_module/scheduler.h"
 
 static void UART_PrintUnsigned(uint16_h value)
 {

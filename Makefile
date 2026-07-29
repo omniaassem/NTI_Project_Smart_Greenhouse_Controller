@@ -17,7 +17,8 @@ C_SOURCES := \
     $(wildcard HAL/*.c) \
     $(wildcard HAL/*/*.c) \
     $(wildcard HAL/*/*/*.c) \
-    $(wildcard LOGIC/*/*.c)
+    $(wildcard Micro/*.c) \
+    $(wildcard Micro/*/*.c)
 
 OBJS   := $(patsubst %.c,build/%.o,$(C_SOURCES))
 TARGET := build/firmware
@@ -26,7 +27,7 @@ TARGET := build/firmware
 INCLUDE_DIRS := include src \
     $(sort $(dir $(wildcard MCAL/*/*.h)) $(wildcard MCAL/*/*/*.h)) \
     $(sort $(dir $(wildcard HAL/*/*.h)) $(wildcard HAL/*/*/*.h)) \
-    $(sort $(dir $(wildcard LOGIC/*/*.h)))
+    $(sort $(dir $(wildcard Micro/*/*.h)))
 CFLAGS += $(addprefix -I,$(INCLUDE_DIRS))
 
 all: $(TARGET).hex

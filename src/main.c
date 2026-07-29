@@ -13,7 +13,7 @@ static void DelayMs(uint16_h ms)
     {
         for (inner = 0U; inner < 6000U; ++inner)
         {
-            asm volatile ("nop");
+            __asm__ volatile ("nop");
         }
     }
 }
