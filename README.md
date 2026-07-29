@@ -20,7 +20,25 @@
 
 ---
 
-## 2. Description
+## 2. Connection Diagram
+
+![Smart Greenhouse Connection Diagram](photo_2026-07-29_19-24-53.jpg)
+
+## Development Status
+
+| Module | Files | Status |
+|--------|-------|--------|
+| Main firmware | `main.c` | **done** |
+| MCAL drivers | `MCAL/ADC/*`, `MCAL/GPIO/*`, `MCAL/I2C/*`, `MCAL/SPI/*`, `MCAL/Timer/*`, `MCAL/UART/*`, `MCAL/Interrupt/*` | **done** |
+| Hardware services | `HAL/DC_Motor/*`, `HAL/LCD_Aip31068_i2c/*`, `HAL/LCD_Hd44780/*`, `HAL/Stepper_L298P/*`, `Service/*` | **done** |
+| Actuator driver | `HAL/Actuators/*` | **in progress** |
+| Button driver | `HAL/Buttons/*` | **in progress** |
+| EEPROM SPI driver | `HAL/EEPROM_SPI/*` | **in progress** |
+| Sensor driver | `HAL/Sensors/*` | **in progress** |
+| Logic modules | `LOGIC/*` | **in progress** |
+| Micro-layer app | `Micro/*` | **in progress** |
+
+## 3. Description
 
 The Smart Greenhouse Controller keeps a plant-growing enclosure inside a healthy
 envelope of **temperature, soil moisture and light** without human intervention.
