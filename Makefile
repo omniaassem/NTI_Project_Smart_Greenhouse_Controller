@@ -16,7 +16,8 @@ C_SOURCES := \
     $(wildcard MCL/*/*/*.c) \
     $(wildcard HAL/*.c) \
     $(wildcard HAL/*/*.c) \
-    $(wildcard HAL/*/*/*.c)
+    $(wildcard HAL/*/*/*.c) \
+    $(wildcard LOGIC/*/*.c)
 
 OBJS   := $(patsubst %.c,build/%.o,$(C_SOURCES))
 TARGET := build/firmware
@@ -24,7 +25,8 @@ TARGET := build/firmware
 # Auto include folders (for #include "gpio.h" in MCL/GPIO/)
 INCLUDE_DIRS := include src \
     $(sort $(dir $(wildcard MCL/*/*.h)) $(wildcard MCL/*/*/*.h)) \
-    $(sort $(dir $(wildcard HAL/*/*.h)) $(wildcard HAL/*/*/*.h))
+    $(sort $(dir $(wildcard HAL/*/*.h)) $(wildcard HAL/*/*/*.h)) \
+    $(sort $(dir $(wildcard LOGIC/*/*.h)))
 CFLAGS += $(addprefix -I,$(INCLUDE_DIRS))
 
 all: $(TARGET).hex
@@ -61,7 +63,7 @@ build/%.o: build/%.s
 .SECONDARY:
 
 clean:
-	-if exist build rmdir /s /q build
+	@test -d build && rm -rf build || true
 
 flash: $(TARGET).hex
 	$(AVRDUDE) -c usbasp -p $(MCU) -U flash:w:$<:i
