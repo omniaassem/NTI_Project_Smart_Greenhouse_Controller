@@ -13,7 +13,7 @@ static void DelayMs(uint16_h ms)
     {
         for (inner = 0U; inner < 6000U; ++inner)
         {
-            __asm__ volatile ("nop");
+            asm volatile ("nop");
         }
     }
 }
@@ -38,23 +38,22 @@ int main(void)
     DC_MotorHandleType Fan = {0};
 
   
-    Pump.in1Port         = GPIO_PORTB;
+    Pump.in1Port         = GPIO_PORTC;
     Pump.in1Pin          = GPIO_PIN0;
-    Pump.in2Port         = GPIO_PORTB;
+    Pump.in2Port         = GPIO_PORTC;
     Pump.in2Pin          = GPIO_PIN1;
-    Pump.pwmChannel      = DC_MOTOR_PWM_NONE; 
-    Pump.enPort          = GPIO_PORTB;
-    Pump.enPin           = GPIO_PIN3;
+    Pump.pwmChannel      = DC_MOTOR_PWM_NONE;
+    Pump.enPort          = GPIO_PORTD;
+    Pump.enPin           = GPIO_PIN4;
     Pump.invertDirection = 0U;
 
-   
-    Fan.in1Port          = GPIO_PORTB;
-    Fan.in1Pin           = GPIO_PIN4;
-    Fan.in2Port          = GPIO_PORTB;
-    Fan.in2Pin           = GPIO_PIN5;
-    Fan.pwmChannel       = DC_MOTOR_PWM_NONE; 
-    Fan.enPort           = GPIO_PORTB;
-    Fan.enPin            = GPIO_PIN3;
+    Fan.in1Port          = GPIO_PORTC;
+    Fan.in1Pin           = GPIO_PIN2;
+    Fan.in2Port          = GPIO_PORTC;
+    Fan.in2Pin           = GPIO_PIN3;
+    Fan.pwmChannel       = DC_MOTOR_PWM_NONE;
+    Fan.enPort           = GPIO_PORTD;
+    Fan.enPin            = GPIO_PIN5;
     Fan.invertDirection  = 0U;
 
     (void)UART_Init(&uartConfig);
