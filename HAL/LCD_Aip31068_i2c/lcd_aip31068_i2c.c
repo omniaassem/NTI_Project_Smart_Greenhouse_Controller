@@ -1,6 +1,6 @@
 #include "../../Service/STD_Types.h"
 #include "../../Service/Bit_Math.h"
-#include "../../MCL/I2C/i2c_interface.h"
+#include "../../MCAL/I2C/i2c_interface.h"
 #include "lcd_aip31068_i2c.h"
 
 /*

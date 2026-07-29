@@ -1,7 +1,7 @@
 #include "../../Service/STD_Types.h"
 #include "../../Service/Bit_Math.h"
-#include "../../MCL/GPIO/gpio_interface.h"
-#include "../../MCL/Timer/timer_registers.h"
+#include "../../MCAL/GPIO/gpio_interface.h"
+#include "../../MCAL/Timer/timer_registers.h"
 #include "dc_motor.h"
 
 /* ================================================================================

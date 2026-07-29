@@ -2,7 +2,7 @@
 #define LCD_AIP31068_I2C_H
 
 #include "../../Service/STD_Types.h"
-#include "../../MCL/I2C/i2c_interface.h"
+#include "../../MCAL/I2C/i2c_interface.h"
 
 /* ================================================================================
  *  AiP31068 CHARACTER LCD DRIVER - PUBLIC INTERFACE (HAL, native I2C)

@@ -1,5 +1,5 @@
 #include "Scheduler_Module.h"
-#include "../../MCL/Timer/timer_interface.h"
+#include "../../MCAL/Timer/timer_interface.h"
 
 #define SCHEDULER_TICK_MS     10U
 #define SCHEDULER_MAX_TASKS   8U
