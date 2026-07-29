@@ -22,9 +22,9 @@ C_SOURCES := \
 OBJS   := $(patsubst %.c,build/%.o,$(C_SOURCES))
 TARGET := build/firmware
 
-# Auto include folders (for #include "gpio.h" in MCL/GPIO/)
+# Auto include folders (for #include "gpio.h" in MCAL/GPIO/)
 INCLUDE_DIRS := include src \
-    $(sort $(dir $(wildcard MCL/*/*.h)) $(wildcard MCL/*/*/*.h)) \
+    $(sort $(dir $(wildcard MCAL/*/*.h)) $(wildcard MCAL/*/*/*.h)) \
     $(sort $(dir $(wildcard HAL/*/*.h)) $(wildcard HAL/*/*/*.h)) \
     $(sort $(dir $(wildcard LOGIC/*/*.h)))
 CFLAGS += $(addprefix -I,$(INCLUDE_DIRS))

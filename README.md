@@ -11,7 +11,7 @@
 | Field | Value |
 |-------|-------|
 | **Project code** | `PRJ-01-GREENHOUSE` |
-| **Team size** | 2 students |
+| **Team size** | 2 – 3 students |
 | **Build window** | Days 11 – 15 (Jul 26 – Jul 30, 2026) |
 | **Demo & submission** | July 30, 2026 |
 | **Dominant skill** | Multi-sensor closed-loop control with hysteresis |
@@ -63,38 +63,7 @@ point, and you must demonstrate the difference on the LCD and in the UART log.
 
 ---
 
-## 4. Team Roles and Work Distribution
-
-### Team Members
-- Omnia
-- Rouaa
-
-### 4.1 Omnia — MCAL and Services Layer
-Omnia is responsible for the low-level firmware foundation of the project.
-Her work includes:
-- Reviewing and preparing the MCAL drivers for ADC, GPIO, I2C, SPI, Timer, USART, and Interrupt.
-- Developing and maintaining shared support files such as Bit_Math.h and STD_Types.h.
-- Ensuring the register definitions and peripheral functions are aligned with the ATmega32A target.
-- Preparing the core building blocks so the upper layers can call them reliably.
-
-### 4.2 Rouaa — HAL and APP Layer
-Rouaa is responsible for the higher-level system logic and hardware abstraction.
-Her work includes:
-- Reviewing and adjusting the HAL drivers for LCD, keypad, and related modules.
-- Building the application-layer logic, including the FSM, hysteresis control loops, and scheduler.
-- Connecting the sensing, control, display, and UART modules together through the main application flow.
-- Supporting integration between sensor readings and actuator behavior.
-
-### 4.3 Shared Task — Initial Priority
-Before implementation continues, both members should agree on a single configuration
-file and shared pin mapping so the project stays consistent.
-- Define common pin assignments for ADC channels, LCD I2C lines, actuator outputs, and buttons.
-- Use one shared configuration header to avoid mismatches between modules.
-- Once the pin map is fixed, each member can continue in parallel with a coordinated structure.
-
----
-
-## 5. Learning Outcomes
+## 4. Learning Outcomes
 
 On completion the student can:
 
@@ -110,7 +79,7 @@ On completion the student can:
 
 ---
 
-## 6. Estimated Duration
+## 5. Estimated Duration
 
 | Phase | Hours | Course day |
 |-------|:-----:|-----------|
@@ -125,7 +94,7 @@ On completion the student can:
 
 ---
 
-## 7. Hardware Components
+## 6. Hardware Components
 
 | # | Component | Qty | SimulIDE part | Purpose |
 |---|-----------|:---:|---------------|---------|
@@ -142,7 +111,7 @@ On completion the student can:
 
 ---
 
-## 8. Pin Map
+## 7. Pin Map
 
 | Signal | Pin | Port bit | Direction | Notes |
 |--------|-----|----------|-----------|-------|
@@ -172,7 +141,7 @@ scheduler, never in the ISR.
 
 ---
 
-## 9. Peripherals Used
+## 8. Peripherals Used
 
 | Peripheral | Configuration | Role |
 |------------|---------------|------|
@@ -187,7 +156,7 @@ scheduler, never in the ISR.
 
 ---
 
-## 10. Software Architecture
+## 9. Software Architecture
 
 ### 9.1 Layer view
 
@@ -255,7 +224,7 @@ scheduler, never in the ISR.
 
 ---
 
-## 11. Data Dictionary (required data)
+## 10. Data Dictionary (required data)
 
 Everything the firmware must hold. Put the types in `APP/config.h` and
 `APP/types.h`.
@@ -326,7 +295,7 @@ typedef enum { SEN_TEMP = 0, SEN_SOIL, SEN_LIGHT }                    Sensor_t;
 
 ---
 
-## 12. System Specifications
+## 11. System Specifications
 
 ### 11.1 Temperature bands
 
@@ -364,7 +333,7 @@ typedef enum { SEN_TEMP = 0, SEN_SOIL, SEN_LIGHT }                    Sensor_t;
 
 ---
 
-## 13. Inputs & Outputs
+## 12. Inputs & Outputs
 
 ### 12.1 Inputs
 
@@ -392,7 +361,7 @@ typedef enum { SEN_TEMP = 0, SEN_SOIL, SEN_LIGHT }                    Sensor_t;
 
 ---
 
-## 14. Functional Requirements
+## 13. Functional Requirements
 
 ### FR-01 — Temperature acquisition
 

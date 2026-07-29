@@ -1,7 +1,7 @@
 #include "../Service/STD_Types.h"
 #include "../Service/Bit_Math.h"
-#include "../MCL/GPIO/gpio_interface.h"
-#include "../MCL/UART/uart_interface.h"
+#include "../MCAL/GPIO/gpio_interface.h"
+#include "../MCAL/UART/uart_interface.h"
 #include "../HAL/DC_Motor/dc_motor.h"
 
 static void DelayMs(uint16_h ms)
