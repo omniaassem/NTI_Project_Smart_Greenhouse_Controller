@@ -1,6 +1,6 @@
 #include "Sensors_Driver.h"
 #include "../../Service/Bit_Math.h"
-#include "../../MCL/ADC/adc_interface.h"
+#include "../../MCAL/ADC/adc_interface.h"
 #include "config.h"
 
 STD_ReturnType Sensors_Init(void)

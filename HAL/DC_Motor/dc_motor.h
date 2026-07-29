@@ -2,7 +2,7 @@
 #define DC_MOTOR_H
 
 #include "../../Service/STD_Types.h"
-#include "../../MCL/GPIO/gpio_interface.h"
+#include "../../MCAL/GPIO/gpio_interface.h"
 
 /* ================================================================================
  *  BRUSHED DC MOTOR DRIVER - PUBLIC INTERFACE (HAL, H-bridge)

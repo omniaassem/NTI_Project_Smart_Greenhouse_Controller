@@ -1,7 +1,7 @@
 #include "../Service/STD_Types.h"
 #include "../Service/Bit_Math.h"
-#include "../MCL/Timer/timer_interface.h"
-#include "../MCL/UART/uart_interface.h"
+#include "../MCAL/Timer/timer_interface.h"
+#include "../MCAL/UART/uart_interface.h"
 #include "../HAL/Sensors/Sensors_Driver.h"
 #include "../LOGIC/Scheduler_Module/Scheduler_Module.h"
 

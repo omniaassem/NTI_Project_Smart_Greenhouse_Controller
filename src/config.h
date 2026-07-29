@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "../MCL/ADC/adc_interface.h"
+#include "../MCAL/ADC/adc_interface.h"
 
 /* Sensor ADC channels */
 #define SENSOR_TEMP_CHANNEL   ADC_CHANNEL0
