@@ -35,8 +35,7 @@
 | Button driver | `HAL/Buttons/*` | **in progress** |
 | EEPROM SPI driver | `HAL/EEPROM_SPI/*` | **in progress** |
 | Sensor driver | `HAL/Sensors/*` | **in progress** |
-| Logic modules | `LOGIC/*` | **in progress** |
-| Micro-layer app | `Micro/*` | **in progress** |
+| Micro-layer app | `Micro/*` | **done** |
 
 ## 3. Description
 
