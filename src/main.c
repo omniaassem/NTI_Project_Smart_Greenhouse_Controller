@@ -37,7 +37,7 @@ int main(void)
     DC_MotorHandleType Pump = {0};
     DC_MotorHandleType Fan = {0};
 
-    /* إعدادات طلمبة المياه (Pump) على B0 و B1 */
+  
     Pump.in1Port         = GPIO_PORTB;
     Pump.in1Pin          = GPIO_PIN0;
     Pump.in2Port         = GPIO_PORTB;
@@ -47,7 +47,7 @@ int main(void)
     Pump.enPin           = GPIO_PIN3;
     Pump.invertDirection = 0U;
 
-    /* إعدادات المروحة (Fan) على B4 و B5 */
+   
     Fan.in1Port          = GPIO_PORTB;
     Fan.in1Pin           = GPIO_PIN4;
     Fan.in2Port          = GPIO_PORTB;
