@@ -34,9 +34,8 @@
 | Actuator driver | `HAL/Actuators/*` | **done** |
 | Button driver | `HAL/Buttons/*` | **done** |
 | EEPROM SPI driver | `HAL/EEPROM_SPI/*` | **in progress** |
-| Sensor driver | `HAL/Sensors/*` | **done** |
-| Logic modules | `LOGIC/*` | **in progress** |
-| Micro-layer app | `Micro/*` | **in progress** |
+| Sensor driver | `HAL/Sensors/*` | **in progress** |
+| Micro-layer app | `Micro/*` | **done** |
 
 ## 3. Description
 
