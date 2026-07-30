@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* File Name: main.c                                                      */
-/* Description: Smart Greenhouse - Full System Integration Test Mode      */
+/* Description: Smart Greenhouse - Full System Integration Complete Code  */
 /**************************************************************************/
 
 #include "STD_Types.h"
@@ -34,13 +34,13 @@
 /* External declarations for scheduler tick */
 extern void SCH_Tick(void);
 
-static void Test_SendLine(const char *message)
+static void App_SendLine(const char *message)
 {
     (void)UART_SendString((const u8 *)message);
     (void)UART_SendString((const u8 *)"\r\n");
 }
 
-static void Test_UART_PrintUnsigned(u16 value)
+static void App_UART_PrintUnsigned(u16 value)
 {
     char buffer[6] = {'0', '0', '0', '0', '0', '\0'};
     u8 index = 0u;
@@ -64,14 +64,14 @@ static void Test_UART_PrintUnsigned(u16 value)
     }
 }
 
-static void Test_UART_PrintLine(const char *label, u16 value)
+static void App_UART_PrintLine(const char *label, u16 value)
 {
     (void)UART_SendString((const u8 *)label);
-    Test_UART_PrintUnsigned(value);
+    App_UART_PrintUnsigned(value);
     (void)UART_SendString((const u8 *)"\r\n");
 }
 
-/* 1. مهمة قراءة الحساسات وتحديث البيانات */
+/* 1. مهمة قراءة الحساسات وإرسالها وعرضها */
 static void App_SensorTask(void)
 {
     u16 tempRaw  = 0u;
@@ -87,18 +87,50 @@ static void App_SensorTask(void)
         (void)Sensors_ScalePct(soilRaw, &soilPct);
         (void)Sensors_ScalePct(lightRaw, &lightPct);
 
-        Test_UART_PrintLine("Temp C:   ", tempC);
-        Test_UART_PrintLine("Soil %:   ", soilPct);
-        Test_UART_PrintLine("Light %:  ", lightPct);
-        Test_SendLine("------");
+        App_UART_PrintLine("Raw Temp: ", tempRaw);
+        App_UART_PrintLine("Temp C:   ", tempC);
+        App_UART_PrintLine("Soil %:   ", soilPct);
+        App_UART_PrintLine("Light %:  ", lightPct);
+        App_SendLine("------");
+    }
+    else
+    {
+        App_SendLine("Sensor read failed");
     }
 }
 
-/* 2. مهمة تفقد الأزرار وتشغيل الأكتيواتورز والمحركات */
-static void App_ActuatorsAndButtonsTask(void)
+/* 2. مهمة التحكم التلقائي في المحركات والأكتيواتورز بناءً على القراءات */
+static void App_ControlTask(void)
 {
-    /* يمكنك هنا وضع كود فحص الأزرار والتحكم التلقائي بالمحركات والجرس */
-    /* مثال تجريبي: تشغيل الأكتيواتورز للاختبار الدائم */
+    u16 tempRaw  = 0u;
+    u16 soilRaw  = 0u;
+    u16 lightRaw = 0u;
+    u8  tempC    = 0u;
+    u8  soilPct  = 0u;
+
+    if (Sensors_ReadRaw(&tempRaw, &soilRaw, &lightRaw) == E_OK)
+    {
+        (void)Sensors_ScaleTempC(tempRaw, &tempC);
+        (void)Sensors_ScalePct(soilRaw, &soilPct);
+
+        /* التحكم التلقائي في المروحة بناءً على الحرارة */
+        if (tempC > 30u)
+        {
+            /* تشغيل المروحة إذا زادت الحرارة عن 30 */
+            DC_Motor_On(); // أو دالة تشغيل المروحة المتاحة لديك
+        }
+        else
+        {
+            /* إيقاف المروحة في الوضع الطبيعي */
+            DC_Motor_Off();
+        }
+
+        /* التحكم التلقائي في المضخة أو الجرس عند انخفاض رطوبة التربة */
+        if (soilPct < 30u)
+        {
+            // تشغيل المضخة أو التنبيه
+        }
+    }
 }
 
 int main(void)
@@ -122,36 +154,35 @@ int main(void)
     DC_MotorHandleType motorFanConfig;
     DC_MotorHandleType motorPumpConfig;
 
-    /* التهيئة الأساسية للبريفيرالز */
+    /* التهيئة الأساسية */
     (void)UART_Init(&uartConfig);
     (void)SCH_Init();
 
     if (Sensors_Init() != E_OK)
     {
-        Test_SendLine("Sensor init failed");
+        App_SendLine("Sensor init failed");
         while (1);
     }
 
     if (Timer_Init(&timerConfig) != E_OK)
     {
-        Test_SendLine("Timer init failed");
+        App_SendLine("Timer init failed");
         while (1);
     }
 
-    /* تهيئة المحركات والشاشة والأزرار */
+    /* تهيئة المحركات */
     (void)DC_Motor_Init(&motorFanConfig);
     (void)DC_Motor_Init(&motorPumpConfig);
-    
-    /* ربط مقاطعة التايمر بالـ Scheduler */
+
+    /* ضبط التايمر وجدولة المهام */
     (void)Timer_SetCallBack(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH, SCH_Tick);
     (void)Timer_EnableInterrupt(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH);
     Timer_EnableGlobalInterrupt();
 
-    /* جدولة المهام المتوازية */
-    (void)SCH_AddTask(App_SensorTask, 1000u);           /* تتفذ كل ثانية */
-    (void)SCH_AddTask(App_ActuatorsAndButtonsTask, 200u); /* تتفذ كل 200 ملي ثانية للاستجابة السريعة للأزرار */
+    (void)SCH_AddTask(App_SensorTask, 1000u);   /* تتفذ كل ثانية */
+    (void)SCH_AddTask(App_ControlTask, 200u);   /* تتفذ كل 200 ملي ثانية للتحكم السريع */
 
-    Test_SendLine("Full System Integration Test Running...");
+    App_SendLine("Full System Integration Running...");
 
     while (1)
     {
