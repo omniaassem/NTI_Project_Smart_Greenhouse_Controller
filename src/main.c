@@ -1,31 +1,48 @@
-#include "../Service/STD_Types.h"
-#include "../Service/Bit_Math.h"
-#include "../MCAL/GPIO/gpio_interface.h"
-#include "../MCAL/UART/uart_interface.h"
-#include "../HAL/DC_Motor/dc_motor.h"
+#include "Service/STD_Types.h"
+#include "Service/Bit_Math.h"
+#include "MCAL/GPIO/gpio_interface.h"
+#include "MCAL/ADC/adc_interface.h"
+#include "MCAL/UART/uart_interface.h"
+#include "MCAL/Timer/timer_interface.h"
 
-static void DelayMs(uint16_h ms)
+#include "HAL/Actuators/Actuators_Driver.h"
+#include "HAL/Sensors/Sensors_Driver.h"
+#include "HAL/LCD/lcd_aip31068_i2c.h"
+
+#include "Micro/Scheduler_module/scheduler.h"
+#include "APP/FSM/greenhouse_fsm.h"
+#include "APP/Control/control.h"
+#include "APP/Console/console.h"
+#include "APP/Report/report.h"
+
+/* ------------------------------------------------------------------
+   1. المهام المجدولة (Scheduled Tasks)
+   ------------------------------------------------------------------ */
+
+/**
+ * @brief مهمة تحديث آلة الحالات المنتهية وحلقة التحكم والكونسول
+ * @note تتكرر كل 50ms لضمان الاستجابة السريعة للمدخلات والتحكم
+ */
+static void Task_UpdateSystem(void)
 {
-    volatile uint16_h outer;
-    volatile uint16_h inner;
-
-    for (outer = 0U; outer < ms; ++outer)
-    {
-        for (inner = 0U; inner < 6000U; ++inner)
-        {
-            asm volatile ("nop");
-        }
-    }
+    (void)FSM_Run();
 }
 
-static void SendLine(const char *message)
+/**
+ * @brief مهمة إرسال تقرير المراقبة الدوري عبر الـ UART
+ * @note تتكرر كل 5000ms (5 ثوانٍ) لعرض حالة الحساسات والمشغلات والنظام
+ */
+static void Task_SendReport(void)
 {
-    (void)UART_SendString((const uint8_h *)message);
-    (void)UART_SendString((const uint8_h *)"\r\n");
+    (void)RPT_SendStatus();
 }
 
+/* ------------------------------------------------------------------
+   2. الدالة الرئيسية (Main Function)
+   ------------------------------------------------------------------ */
 int main(void)
 {
+    /* إعدادات وحدة الـ UART */
     UART_ConfigType uartConfig =
     {
         .baudRate = UART_BAUD_9600,
@@ -34,71 +51,54 @@ int main(void)
         .stopBits = UART_STOP_1BIT
     };
 
-    DC_MotorHandleType Pump = {0};
-    DC_MotorHandleType Fan = {0};
+    /* إعدادات التايمر 0 ليعطي مقاطعة CTC كل 1ms بدقة لمجدول المهام */
+    Timer_ConfigType timerConfig =
+    {
+        .channel      = TIMER_CHANNEL_0,
+        .mode         = TIMER_MODE_CTC,
+        .prescaler    = TIMER_CLOCK_DIV_1024,
+        .initialValue = 0U,
+        .compareValue = 155U /* 1ms at 16MHz clock */
+    };
 
-    Pump.in1Port         = GPIO_PORTC;
-    Pump.in1Pin          = GPIO_PIN0;
-    Pump.in2Port         = GPIO_PORTC;
-    Pump.in2Pin          = GPIO_PIN1;
-    Pump.enPort          = GPIO_PORTD;
-    Pump.enPin           = GPIO_PIN4;
-    Pump.invertDirection = 0U;
-
-    Fan.in1Port          = GPIO_PORTC;
-    Fan.in1Pin           = GPIO_PIN2;
-    Fan.in2Port          = GPIO_PORTC;
-    Fan.in2Pin           = GPIO_PIN3;
-    Fan.enPort           = GPIO_PORTD;
-    Fan.enPin            = GPIO_PIN5;
-    Fan.invertDirection  = 0U;
-
+    /* --- أ. تهيئة طبقة الـ MCAL (المتحكم والاتصال) --- */
     (void)UART_Init(&uartConfig);
 
-    if (DC_Motor_Init(&Pump) != E_OK)
+    if (Timer_Init(&timerConfig) != E_OK)
     {
-        SendLine("Greenhouse: Pump init failed");
-        while (1)
-        {
-        }
+        while (1) { /* خطأ حرج: فشل تهيئة التايمر */ }
     }
 
-    if (DC_Motor_Init(&Fan) != E_OK)
+    /* --- ب. تهيئة طبقات التطبيق والـ FSM (آلة الحالات) --- */
+    if (FSM_Init() != FSM_OK)
     {
-        SendLine("Greenhouse: Fan init failed");
-        while (1)
-        {
-        }
+        while (1) { /* خطأ حرج: فشل تهيئة النظام والتطبيق */ }
     }
 
-    SendLine("Greenhouse motor test started");
+    (void)RPT_Init();
 
+    /* --- جـ. تهيئة المجدول الزمني وتسجيل المهام --- */
+    (void)SCH_Init();
+
+    /* إضافة مهمة النظام الرئيسية لتكرارها كل 50ms */
+    (void)SCH_AddTask(Task_UpdateSystem, 50U);
+
+    /* إضافة مهمة التقرير الدوري عبر الـ UART كل 5000ms */
+    (void)SCH_AddTask(Task_SendReport, 5000U);
+
+    /* --- د. ربط مقاطعة التايمر بالـ SCH_Tick وتفعيل المقاطعات العامة --- */
+    (void)Timer_SetCallBack(TIMER_CHANNEL_0,
+                            TIMER_INT_COMPARE_MATCH,
+                            SCH_Tick);
+                            
+    (void)Timer_EnableInterrupt(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH);
+    Timer_EnableGlobalInterrupt();
+
+    /* --- هـ. الحلقة الرئيسية (Super Loop) --- */
     while (1)
     {
-        SendLine("Forward");
-        (void)DC_Motor_Forward(&Pump);
-        (void)DC_Motor_Forward(&Fan);
-        DelayMs(2000U);
-
-        SendLine("Stop");
-        (void)DC_Motor_Stop(&Pump);
-        (void)DC_Motor_Stop(&Fan);
-        DelayMs(1000U);
-
-        SendLine("Backward");
-        (void)DC_Motor_Backward(&Pump);
-        (void)DC_Motor_Backward(&Fan);
-        DelayMs(2000U);
-
-        SendLine("Brake");
-        (void)DC_Motor_Brake(&Pump);
-        (void)DC_Motor_Brake(&Fan);
-        DelayMs(1000U);
-
-        SendLine("Stop");
-        (void)DC_Motor_Stop(&Pump);
-        (void)DC_Motor_Stop(&Fan);
-        DelayMs(1000U);
+        /* إيقاد المجدول التعاوني لمعالجة وتنفيذ المهام التي حان وقتها */
+        SCH_Dispatch();
     }
 
     return 0;
