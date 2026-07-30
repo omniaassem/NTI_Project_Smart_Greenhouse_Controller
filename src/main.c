@@ -1,106 +1,85 @@
-/**
- * @file main.c
- * @brief Complete and final integration firmware for Project-2
- */
+int main(void)
+{
+    /*================ MCAL =================*/
+    GPIO_Init();
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <util/atomic.h>
+    ADC_ConfigType adcConfig = {0};
+    ADC_Init(&adcConfig);
 
-/* Application and Service Headers */
-#include "config.h"
-#include "STD_Types.h"
+    Timer_ConfigType timerConfig =
+    {
+        .mode         = TIMER_MODE_CTC,
+        .prescaler    = TIMER_CLOCK_DIV_1024,   // كما في الـ README
+        .compareValue = 77                      // 10 ms @ 8 MHz
+    };
+    Timer_Init(&timerConfig);
 
-/* MCAL Layer */
-#include "timer_interface.h"
-#include "spi_interface.h"
-#include "interrupt_interface.h"
-#include "adc_interface.h"
-#include "i2c_interface.h"
-#include "uart_interface.h"
+    UART_ConfigType uartConfig = {0};
+    UART_Init(&uartConfig);
 
-/* HAL Layer */
-#include "Actuators_Driver.h"
-#include "Buttons_Driver.h"
-#include "dc_motor.h"
-#include "lcd_aip31068_i2c.h"
-#include "MotorBridge.h"
-#include "Sensors_Driver.h"
+    I2C_MasterInit();
 
-/* Micro Layer */
-#include "greenhouse_fsm.h"
-#include "control.h"
-#include "report.h"
-#include "console.h"
+    EXTI_ConfigType extiConfig = {0};
+    EXTI_Init(&extiConfig);
 
-/* --- Task Implementations --- */
-static void Task_Buttons(void) {
-    BTN_Poll();
-}
+    /*================ HAL =================*/
 
-static void Task_FSM(void) {
-    FSM_Run();
-}
-
-static void Task_Sample(void) {
-}
-
-static void Task_Control(void) {
-    CTRL_Update();
-}
-
-static void Task_LCD(void) {
-}
-
-static void Task_Report(void) {
-    RPT_SendStatus();
-}
-
-static void Task_Console(void) {
-    CON_Process(); /* تم التصحيح لتطابق CON_Process المعرفة في console.h */
-}
-
-int main(void) {
-    /* 1. Initialize MCAL Peripherals */
-    ADC_Init(NULL);
-    Timer_Init(NULL);
-    EXTI_Init(NULL);
-    UART_Init(NULL);
-    SPI_Init(NULL);
-
-    /* 2. Initialize Application Layers */
-    FSM_Init();
+    SEN_Init();
+    BTN_Init();
+    LCD_Init();
     ACT_Init();
 
-    /* Enable Global Interrupts */
+    /*================ APP =================*/
+
+    CON_Init();
+    RPT_Init();
+    CTRL_Init();      // لو موجودة
+    FSM_Init();
+
     sei();
 
+    uint16_t lastTick = 0;
     uint16_t tickCounter = 0;
 
-    /* Super-Loop Dispatcher */
-    while (1) {
+    while(1)
+    {
+        uint16_t currentTick;
+
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+            currentTick = g_tick;      // متغير volatile يزيد داخل ISR
+        }
+
+        if(currentTick == lastTick)
+            continue;
+
+        lastTick = currentTick;
         tickCounter++;
 
-        Task_Buttons();
-        Task_FSM();
+        /*========== 10 ms ==========*/
+        BTN_Poll();
+        FSM_Run();
 
-        if ((tickCounter % 2) == 0) {
-            Task_Console();
-        }
+        /*==========20 ms===========*/
+        if((tickCounter % 2U) == 0U)
+            CON_Process();
 
-        if ((tickCounter % 10) == 1) {      
-            Task_Sample();
-        }
-        if ((tickCounter % 20) == 3) {      
-            Task_Control();
-        }
-        if ((tickCounter % 50) == 5) {      
-            Task_LCD();
-        }
-        if ((tickCounter % 500) == 7) {     
-            Task_Report();
-        }
+        /*==========100 ms==========*/
+        if((tickCounter % 10U) == 1U)
+            SEN_Scan();
+
+        /*==========200 ms==========*/
+        if((tickCounter % 20U) == 3U)
+            CTRL_Update();
+
+        /*==========500 ms==========*/
+        if((tickCounter % 50U) == 5U)
+            LCD_Refresh();
+
+        /*==========5 sec===========*/
+        if((tickCounter % 500U) == 7U)
+            RPT_SendStatus();
+
+        /* EEPROM Task محذوفة */
     }
-
-    return 0;
 }
