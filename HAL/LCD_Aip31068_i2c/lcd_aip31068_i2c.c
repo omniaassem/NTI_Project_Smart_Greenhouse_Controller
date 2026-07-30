@@ -95,11 +95,11 @@ static uint8_h LCD_Aip31068_RowBase(const LCD_Aip31068_HandleType *handle, uint8
 
     switch (row)
     {
-        case 0U:  local_Base = (uint8_h)0x00U;                   break;
-        case 1U:  local_Base = (uint8_h)0x40U;                   break;
+        case 0U:  local_Base = (uint8_h)0x00U;                 break;
+        case 1U:  local_Base = (uint8_h)0x40U;                 break;
         case 2U:  local_Base = (uint8_h)(0x00U + handle->cols);  break;
         case 3U:  local_Base = (uint8_h)(0x40U + handle->cols);  break;
-        default:  local_Base = (uint8_h)0x00U;                   break;
+        default:  local_Base = (uint8_h)0x00U;                 break;
     }
 
     return local_Base;
@@ -145,7 +145,7 @@ STD_ReturnType LCD_Aip31068_Init(LCD_Aip31068_HandleType *handle)
 
     if (handle->rows > 1U)
     {
-        local_FunctionSet |= 0x08U;                              /* N = 1  */
+        local_FunctionSet |= 0x08U;                            /* N = 1  */
     }
 
     if (LCD_Aip31068_SendCommand(handle, local_FunctionSet) != E_OK)
@@ -226,7 +226,7 @@ STD_ReturnType LCD_Aip31068_WriteChar(LCD_Aip31068_HandleType *handle, uint8_h c
 
 STD_ReturnType LCD_Aip31068_WriteString(LCD_Aip31068_HandleType *handle, const uint8_h *pString)
 {
-    uint16_h local_Length = 0U;
+    uint16_h local_Index = 0U;
 
     /* STEP 1: Validate the handle and the pointer. */
     if ((handle == NULL) || (handle->initialized == 0U) || (pString == NULL))
@@ -234,25 +234,23 @@ STD_ReturnType LCD_Aip31068_WriteString(LCD_Aip31068_HandleType *handle, const u
         return E_NOK;
     }
 
-    /* STEP 2: Measure the string - the whole thing rides in one transaction. */
-    while (pString[local_Length] != '\0')
+    /* STEP 2: Send each character individually for SimulIDE compatibility. */
+    while (pString[local_Index] != '\0')
     {
-        local_Length++;
+        if (LCD_Aip31068_WriteChar(handle, pString[local_Index]) != E_OK)
+        {
+            return E_NOK;
+        }
+        local_Index++;
     }
 
-    if (local_Length == 0U)
-    {
-        return E_OK;      /* an empty string is a valid no-op */
-    }
-
-    /* STEP 3: Control byte 0x40 once, then every character back to back. */
-    return LCD_Aip31068_Transfer(handle, LCD_AIP31068_CTRL_DATA, pString, local_Length);
+    return E_OK;
 }
 
 
 STD_ReturnType LCD_Aip31068_WriteStringAt(LCD_Aip31068_HandleType *handle,
-                                          uint8_h row, uint8_h column,
-                                          const uint8_h *pString)
+                                        uint8_h row, uint8_h column,
+                                        const uint8_h *pString)
 {
     /* STEP 1: Move the cursor first; an impossible position must fail early. */
     if (LCD_Aip31068_SetCursor(handle, row, column) != E_OK)
@@ -324,7 +322,7 @@ STD_ReturnType LCD_Aip31068_WriteNumber(LCD_Aip31068_HandleType *handle, sint32 
 
 
 STD_ReturnType LCD_Aip31068_SetCursor(LCD_Aip31068_HandleType *handle,
-                                      uint8_h row, uint8_h column)
+                                    uint8_h row, uint8_h column)
 {
     uint8_h local_Address = 0U;
 
@@ -501,7 +499,7 @@ STD_ReturnType LCD_Aip31068_ShiftDisplay(LCD_Aip31068_HandleType *handle, uint8_
 
 
 STD_ReturnType LCD_Aip31068_CreateCustomChar(LCD_Aip31068_HandleType *handle,
-                                             uint8_h location, const uint8_h *pPattern)
+                                           uint8_h location, const uint8_h *pPattern)
 {
     uint8_h local_Rows[8];
     uint8_h local_Index = 0U;
