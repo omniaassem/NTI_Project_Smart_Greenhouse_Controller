@@ -1,8 +1,8 @@
 #include "Actuators_Driver.h"
 #include "../../MCAL/GPIO/gpio_interface.h"
 
-#define ACTUATOR_FAN_PIN      GPIO_PIN0
-#define ACTUATOR_PUMP_PIN     GPIO_PIN1
+#define ACTUATOR_FAN_PIN      GPIO_PIN4  // لتتوافق مع IN3 (المتصل بـ B4 في الرسمة)
+#define ACTUATOR_PUMP_PIN     GPIO_PIN0  // لتتوافق مع IN1 (المتصل بـ B0 في الرسمة)
 #define ACTUATOR_LAMP_PIN     GPIO_PIN2
 #define ACTUATOR_ALARM_PIN    GPIO_PIN3
 
