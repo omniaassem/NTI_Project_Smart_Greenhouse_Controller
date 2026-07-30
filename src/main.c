@@ -1,4 +1,6 @@
 #include <util/delay.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "STD_Types.h"
 #include "Bit_Math.h"
@@ -55,17 +57,53 @@ int main(void)
     (void)RPT_Init();
 
     (void)LCD_Aip31068_Clear(&lcd);
-    (void)LCD_Aip31068_WriteStringAt(&lcd, 0, 0, (uint8_h *)"Greenhouse");
-    (void)LCD_Aip31068_WriteStringAt(&lcd, 1, 0, (uint8_h *)"System Ready");
-while (1)
-{
-    FSM_Run();
-
-    CON_Process();
-
-    RPT_SendStatus();
-
+    (void)LCD_Aip31068_WriteStringAt(&lcd, 0, 0, (uint8_h *)"Greenhouse System");
+    (void)LCD_Aip31068_WriteStringAt(&lcd, 1, 0, (uint8_h *)"Initializing...  ");
     _delay_ms(1000);
-}
+
+    uint16_h updateCounter = 0;
+
+    while (1)
+    {
+        FSM_Run();
+
+        CON_Process();
+
+        RPT_SendStatus();
+
+        /* تحديث الشاشة دورياً بقراءات الحساسات وحالة المشغلات الحقيقية */
+        updateCounter++;
+        if (updateCounter >= 5) // التحديث كل دورات منتظمة
+        {
+            updateCounter = 0;
+
+            // جلب القيم الحقيقية من وحدة التقارير أو الدريفرات
+            sint32 temp  = RPT_GetTemp();
+            sint32 soil  = RPT_GetSoil();
+            sint32 light = RPT_GetLight();
+
+            uint8_h fan  = RPT_GetFanState();
+            uint8_h pump = RPT_GetPumpState();
+            uint8_h lamp = RPT_GetLampState();
+
+            // --- السطر الأول: قراءات الحساسات ---
+            char line1[17];
+            snprintf(line1, sizeof(line1), "T:%ldC S:%ld%% L:%ld%%", (long)temp, (long)soil, (long)light);
+            for (uint8_h i = strlen(line1); i < 16; i++) { line1[i] = ' '; }
+            line1[16] = '\0';
+            (void)LCD_Aip31068_WriteStringAt(&lcd, 0, 0, (uint8_h *)line1);
+
+            // --- السطر الثاني: حالات المشغلات والمود ---
+            char line2[17];
+            snprintf(line2, sizeof(line2), "F:%s P:%s AUTO", 
+                     fan ? "ON" : "OF", 
+                     pump ? "ON" : "OF");
+            for (uint8_h i = strlen(line2); i < 16; i++) { line2[i] = ' '; }
+            line2[16] = '\0';
+            (void)LCD_Aip31068_WriteStringAt(&lcd, 1, 0, (uint8_h *)line2);
+        }
+
+        _delay_ms(50);
+    }
     return 0;
 }

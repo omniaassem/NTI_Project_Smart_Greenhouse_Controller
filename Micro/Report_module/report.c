@@ -6,6 +6,14 @@
 #include "../Greenhouse_FSM/greenhouse_fsm.h"
 #include <stdio.h>
 
+/* تعريف المتغيرات المخزنة لتحديث الشاشة */
+static sint32 cached_temp = 0;
+static sint32 cached_soil = 0;
+static sint32 cached_light = 0;
+static ActuatorStateType cached_fan = ACT_STATE_OFF;
+static ActuatorStateType cached_pump = ACT_STATE_OFF;
+static ActuatorStateType cached_lamp = ACT_STATE_OFF;
+
 static void RPT_SendString(const char *str)
 {
     while (*str != '\0')
@@ -51,12 +59,20 @@ REPORT_Status_t RPT_SendStatus(void)
 
     (void)Sensors_ScaleTempC(rawTemp, &tempC);
     (void)Sensors_ScalePct(rawSoil, &soilPct);
-    (void)Sensors_ScalePct(lightPct, &lightPct);
+    (void)Sensors_ScalePct(rawLight, &lightPct);
 
     (void)ACT_Get(ACTUATOR_FAN, &fanState);
     (void)ACT_Get(ACTUATOR_PUMP, &pumpState);
     (void)ACT_Get(ACTUATOR_LAMP, &lightState);
     (void)ACT_Get(ACTUATOR_ALARM, &alarmState);
+
+    /* تحديث القيم المخزنة لتتوافق مع sint32 */
+    cached_temp = (sint32)tempC;
+    cached_soil = (sint32)soilPct;
+    cached_light = (sint32)lightPct;
+    cached_fan = fanState;
+    cached_pump = pumpState;
+    cached_lamp = lightState;
 
     FSM_State_t fsmState = FSM_GetState();
 
@@ -77,4 +93,29 @@ REPORT_Status_t RPT_SendStatus(void)
     RPT_SendString(reportBuffer);
 
     return REPORT_OK;
+}
+
+/* دوال الـ Getters متطابقة مع ملف report.h بنوع sint32 */
+sint32 RPT_GetTemp(void) {
+    return cached_temp;
+}
+
+sint32 RPT_GetSoil(void) {
+    return cached_soil;
+}
+
+sint32 RPT_GetLight(void) {
+    return cached_light;
+}
+
+uint8_h RPT_GetFanState(void) {
+    return cached_fan;
+}
+
+uint8_h RPT_GetPumpState(void) {
+    return cached_pump;
+}
+
+uint8_h RPT_GetLampState(void) {
+    return cached_lamp;
 }
