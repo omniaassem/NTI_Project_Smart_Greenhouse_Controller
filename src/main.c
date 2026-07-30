@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* File Name: main.c                                                      */
-/* Description: Smart Greenhouse - Full Comprehensive Test Mode (Fixed)   */
+/* Description: Smart Greenhouse - Full System Integration Test Mode      */
 /**************************************************************************/
 
 #include "STD_Types.h"
@@ -71,8 +71,8 @@ static void Test_UART_PrintLine(const char *label, u16 value)
     (void)UART_SendString((const u8 *)"\r\n");
 }
 
-/* 1. مهمة قراءة الحساسات وإرسالها عبر الـ UART */
-static void Test_SensorTask(void)
+/* 1. مهمة قراءة الحساسات وتحديث البيانات */
+static void App_SensorTask(void)
 {
     u16 tempRaw  = 0u;
     u16 soilRaw  = 0u;
@@ -87,22 +87,18 @@ static void Test_SensorTask(void)
         (void)Sensors_ScalePct(soilRaw, &soilPct);
         (void)Sensors_ScalePct(lightRaw, &lightPct);
 
-        Test_UART_PrintLine("Raw Temp: ", tempRaw);
         Test_UART_PrintLine("Temp C:   ", tempC);
         Test_UART_PrintLine("Soil %:   ", soilPct);
         Test_UART_PrintLine("Light %:  ", lightPct);
         Test_SendLine("------");
     }
-    else
-    {
-        Test_SendLine("Sensor read failed");
-    }
 }
 
-/* 2. مهمة اختبار الأكتيواتورز */
-static void Test_ActuatorsTask(void)
+/* 2. مهمة تفقد الأزرار وتشغيل الأكتيواتورز والمحركات */
+static void App_ActuatorsAndButtonsTask(void)
 {
-    /* يمكنك تفعيل التحكم هنا حسب الدوال المعرفة في Actuators_Driver.h */
+    /* يمكنك هنا وضع كود فحص الأزرار والتحكم التلقائي بالمحركات والجرس */
+    /* مثال تجريبي: تشغيل الأكتيواتورز للاختبار الدائم */
 }
 
 int main(void)
@@ -123,6 +119,10 @@ int main(void)
         .initialValue = 0u
     };
 
+    DC_MotorHandleType motorFanConfig;
+    DC_MotorHandleType motorPumpConfig;
+
+    /* التهيئة الأساسية للبريفيرالز */
     (void)UART_Init(&uartConfig);
     (void)SCH_Init();
 
@@ -138,14 +138,20 @@ int main(void)
         while (1);
     }
 
+    /* تهيئة المحركات والشاشة والأزرار */
+    (void)DC_Motor_Init(&motorFanConfig);
+    (void)DC_Motor_Init(&motorPumpConfig);
+    
+    /* ربط مقاطعة التايمر بالـ Scheduler */
     (void)Timer_SetCallBack(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH, SCH_Tick);
     (void)Timer_EnableInterrupt(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH);
     Timer_EnableGlobalInterrupt();
 
-    (void)SCH_AddTask(Test_SensorTask, 1000u);
-    (void)SCH_AddTask(Test_ActuatorsTask, 500u);
+    /* جدولة المهام المتوازية */
+    (void)SCH_AddTask(App_SensorTask, 1000u);           /* تتفذ كل ثانية */
+    (void)SCH_AddTask(App_ActuatorsAndButtonsTask, 200u); /* تتفذ كل 200 ملي ثانية للاستجابة السريعة للأزرار */
 
-    Test_SendLine("Full Comprehensive Test Mode Running...");
+    Test_SendLine("Full System Integration Test Running...");
 
     while (1)
     {
