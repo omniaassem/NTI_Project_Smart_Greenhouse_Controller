@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* File Name: main.c                                                      */
-/* Description: Smart Greenhouse - Comprehensive Test Mode (Corrected)    */
+/* Description: Smart Greenhouse - Full Comprehensive Test Mode (Fixed)   */
 /**************************************************************************/
 
 #include "STD_Types.h"
@@ -71,6 +71,7 @@ static void Test_UART_PrintLine(const char *label, u16 value)
     (void)UART_SendString((const u8 *)"\r\n");
 }
 
+/* 1. مهمة قراءة الحساسات وإرسالها عبر الـ UART */
 static void Test_SensorTask(void)
 {
     u16 tempRaw  = 0u;
@@ -96,6 +97,12 @@ static void Test_SensorTask(void)
     {
         Test_SendLine("Sensor read failed");
     }
+}
+
+/* 2. مهمة اختبار الأكتيواتورز */
+static void Test_ActuatorsTask(void)
+{
+    /* يمكنك تفعيل التحكم هنا حسب الدوال المعرفة في Actuators_Driver.h */
 }
 
 int main(void)
@@ -135,10 +142,10 @@ int main(void)
     (void)Timer_EnableInterrupt(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH);
     Timer_EnableGlobalInterrupt();
 
-    /* تم تعديل طريقة إضافة المهمة لتجنب خطأ مقارنة الأنواع (Enum Comparison) */
     (void)SCH_AddTask(Test_SensorTask, 1000u);
+    (void)SCH_AddTask(Test_ActuatorsTask, 500u);
 
-    Test_SendLine("Comprehensive Test Mode Running...");
+    Test_SendLine("Full Comprehensive Test Mode Running...");
 
     while (1)
     {
