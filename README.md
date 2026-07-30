@@ -381,12 +381,12 @@ Cooperative, non-preemptive. Timer0 CTC ISR sets `g_tick`; `main()` dispatches.
 | ID | Task | Period | Offset | Budget | Work | Assigned Developer |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-1 | `Task_Buttons` | 10 ms | 0 | 100 µs | Debounce, edge detect | Roua |
-| T-2 | `Task_FSM` | 10 ms | 0 | 200 µs | One `switch` pass, timers | Omnia Assem |
+| T-2 | `Task_FSM` | 10 ms | 0 | 200 µs | One `switch` pass, timers | Omnia  |
 | T-3 | `Task_Sample` | 100 ms | 1 | 1 ms | 3× ADC + median + scale | Roua |
-| T-4 | `Task_Control` | 200 ms | 3 | 300 µs | 3 hysteresis loops | Omnia Assem |
+| T-4 | `Task_Control` | 200 ms | 3 | 300 µs | 3 hysteresis loops | Omnia |
 | T-5 | `Task_LCD` | 500 ms | 5 | 4 ms | Repaint changed cells | Roua |
-| T-6 | `Task_Report` | 5 s | 7 | 2 ms | Build + queue telemetry | Omnia Assem |
-| T-7 | `Task_Console` | 20 ms | 2 | 500 µs | Parse one complete line | Omnia Assem |
+| T-6 | `Task_Report` | 5 s | 7 | 2 ms | Build + queue telemetry | Omnia |
+| T-7 | `Task_Console` | 20 ms | 2 | 500 µs | Parse one complete line | Omnia |
 | T-8 | `Task_EEPROM` | on event | — | 50 ms | Save / load, `WIP` polled | Roua |
 
 ---
