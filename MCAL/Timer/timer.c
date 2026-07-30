@@ -7,15 +7,13 @@
  *  TIMER DRIVER - IMPLEMENTATION (ATmega32)
  * ============================================================================== */
 
-/* ISR Vector definitions for ATmega32 GCC Compiler */
-void __vector_7(void)  __attribute__((signal)); /* TIMER2 COMP (Compare Match) */
-void __vector_8(void)  __attribute__((signal)); /* TIMER2 OVF  (Overflow)      */
-void __vector_9(void)  __attribute__((signal)); /* TIMER1 CAPT (Input Capture)  */
-void __vector_10(void) __attribute__((signal)); /* TIMER1 COMPA(Compare A)      */
-void __vector_11(void) __attribute__((signal)); /* TIMER1 COMPB(Compare B)      */
-void __vector_12(void) __attribute__((signal)); /* TIMER1 OVF  (Overflow)      */
-void __vector_14(void) __attribute__((signal)); /* TIMER0 COMP (Compare Match) */
-void __vector_15(void) __attribute__((signal)); /* TIMER0 OVF  (Overflow)      */
+/* ISR Vector definitions for ATmega32 standard GCC Compiler (AVR-Libc) */
+void __vector_4(void)  __attribute__((signal)); /* TIMER2 COMP (Compare Match) */
+void __vector_5(void)  __attribute__((signal)); /* TIMER2 OVF  (Overflow)      */
+void __vector_7(void)  __attribute__((signal)); /* TIMER1 COMPA(Compare A)      */
+void __vector_9(void)  __attribute__((signal)); /* TIMER1 OVF  (Overflow)      */
+void __vector_10(void) __attribute__((signal)); /* TIMER0 COMP (Compare Match) */
+void __vector_11(void) __attribute__((signal)); /* TIMER0 OVF  (Overflow)      */
 
 /*
  * Callback storage: one slot per channel per interrupt source.
@@ -357,8 +355,8 @@ STD_ReturnType Timer_DisableInterrupt(Timer_ChannelType channel, Timer_Interrupt
 
 
 STD_ReturnType Timer_SetCallBack(Timer_ChannelType channel,
-                                 Timer_InterruptType intType,
-                                 Timer_CallBackType callBack)
+                               Timer_InterruptType intType,
+                               Timer_CallBackType callBack)
 {
     if ((channel >= TIMER_CHANNEL_MAX) || (callBack == NULL))
     {
@@ -383,12 +381,11 @@ void Timer_DisableGlobalInterrupt(void)
 
 
 /* ================================================================================
- *  INTERRUPT SERVICE ROUTINES
- *  Mapped to ATmega32 Vector table using standard GCC attributes.
+ *  INTERRUPT SERVICE ROUTINES (Mapped to ATmega32 Standard Vector Table)
  * ============================================================================== */
 
-/* Timer2 Compare Match ISR */
-void __vector_7(void)
+/* Timer2 Compare Match ISR (__vector_4) */
+void __vector_4(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_COMPARE_MATCH] != NULL)
     {
@@ -396,8 +393,8 @@ void __vector_7(void)
     }
 }
 
-/* Timer2 Overflow ISR */
-void __vector_8(void)
+/* Timer2 Overflow ISR (__vector_5) */
+void __vector_5(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_OVERFLOW] != NULL)
     {
@@ -405,8 +402,8 @@ void __vector_8(void)
     }
 }
 
-/* Timer1 Compare Match A ISR */
-void __vector_10(void)
+/* Timer1 Compare Match A ISR (__vector_7) */
+void __vector_7(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_COMPARE_MATCH] != NULL)
     {
@@ -414,8 +411,8 @@ void __vector_10(void)
     }
 }
 
-/* Timer1 Overflow ISR */
-void __vector_12(void)
+/* Timer1 Overflow ISR (__vector_9) */
+void __vector_9(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_OVERFLOW] != NULL)
     {
@@ -423,8 +420,8 @@ void __vector_12(void)
     }
 }
 
-/* Timer0 Compare Match ISR */
-void __vector_14(void)
+/* Timer0 Compare Match ISR (__vector_10) */
+void __vector_10(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH] != NULL)
     {
@@ -432,8 +429,8 @@ void __vector_14(void)
     }
 }
 
-/* Timer0 Overflow ISR */
-void __vector_15(void)
+/* Timer0 Overflow ISR (__vector_11) */
+void __vector_11(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_OVERFLOW] != NULL)
     {

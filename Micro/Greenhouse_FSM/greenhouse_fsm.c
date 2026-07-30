@@ -1,17 +1,15 @@
 #include "greenhouse_fsm.h"
 #include "../../Service/STD_Types.h"
-#include "../Control/control.h"
-#include "../Console/console.h"
+#include "control.h"
+#include "console.h"
 #include "../../HAL/Actuators/Actuators_Driver.h"
 #include "../../HAL/Sensors/Sensors_Driver.h"
 
-/* حدود الإنذار (Alarm Thresholds) */
-#define CRITICAL_HIGH_TEMP_C      45u  /* درجة حرارة حرجة للإنذار */
-#define CRITICAL_LOW_SOIL_PCT     10u  /* جفاف حاد في التربة للإنذار */
+#define CRITICAL_HIGH_TEMP_C      45u
+#define CRITICAL_LOW_SOIL_PCT     10u
 
 static FSM_State_t currentState = FSM_STATE_INIT;
 
-/* دالة مساعدة للتحقق من وجود ظروف إنذار حادة */
 static uint8_h FSM_CheckAlarmConditions(void)
 {
     uint16_h rawTemp = 0, rawSoil = 0, rawLight = 0;
@@ -24,7 +22,7 @@ static uint8_h FSM_CheckAlarmConditions(void)
 
         if (tempC >= CRITICAL_HIGH_TEMP_C || soilPct <= CRITICAL_LOW_SOIL_PCT)
         {
-            return 1u; /* يوجد ظروف إنذار */
+            return 1u;
         }
     }
     return 0u;
@@ -32,7 +30,6 @@ static uint8_h FSM_CheckAlarmConditions(void)
 
 FSM_Status_t FSM_Init(void)
 {
-    /* تهيئة وحدة التحكم والمكونات الأساسية */
     if (CTRL_Init() != CONTROL_OK)
     {
         return FSM_ERROR;
@@ -49,10 +46,8 @@ FSM_Status_t FSM_Init(void)
 
 FSM_Status_t FSM_Run(void)
 {
-    /* معالجة أوامر الـ Console بشكل مستمر */
     (void)CON_Process();
 
-    /* التحقق المستمر من الإنذارات الحرجة للتحويل التلقائي لحالة ALARM */
     if (currentState != FSM_STATE_ALARM && FSM_CheckAlarmConditions())
     {
         currentState = FSM_STATE_ALARM;
@@ -61,25 +56,20 @@ FSM_Status_t FSM_Run(void)
     switch (currentState)
     {
         case FSM_STATE_AUTO:
-            /* نمط التلقائي: تنفيذ حلقة التحكم بالأوتوماتيك من موديل CTRL */
             if (CTRL_Update() != CONTROL_OK)
             {
-                /* في حال وجود خطأ في القراءة يتحول إلى الإنذار */
                 currentState = FSM_STATE_ALARM;
             }
             break;
 
         case FSM_STATE_MANUAL:
-            /* نمط التحكم اليدوي: يتم استقبال الأوامر وتغيير المشغلات مباشرة عبر הـ Console */
             break;
 
         case FSM_STATE_ALARM:
-            /* نمط الإنذار: إيقاف المكونات الخطرة وتفعيل حماية النظام */
-            (void)Actuators_SetPumpState(ACTUATOR_STATE_OFF);
-            (void)Actuators_SetFanState(ACTUATOR_STATE_ON); /* تشغيل المروحة بأقصى طاقة للتبريد */
-            (void)Actuators_SetLightState(ACTUATOR_STATE_OFF);
+            (void)ACT_Set(ACTUATOR_PUMP, ACT_STATE_OFF);
+            (void)ACT_Set(ACTUATOR_FAN, ACT_STATE_ON);
+            (void)ACT_Set(ACTUATOR_LAMP, ACT_STATE_OFF);
             
-            /* إذا زالت أسباب الإنذار، يمكن العودة تلقائياً للنمط التلقائي */
             if (!FSM_CheckAlarmConditions())
             {
                 currentState = FSM_STATE_AUTO;
@@ -87,7 +77,6 @@ FSM_Status_t FSM_Run(void)
             break;
 
         case FSM_STATE_CONFIG:
-            /* نمط الإعدادات: انتظار إدخال قيم العتبات الجديدة عبر الـ Console */
             break;
 
         default:

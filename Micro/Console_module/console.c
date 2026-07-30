@@ -2,15 +2,13 @@
 #include "../../Service/STD_Types.h"
 #include "../../MCL/UART/uart_interface.h"
 #include "../Sensors/Sensors_Driver.h"
-#include <string.h>
-#include <stdio.h>
+
 
 #define CONSOLE_RX_BUFFER_SIZE  64
 
 static char g_rxBuffer[CONSOLE_RX_BUFFER_SIZE];
 static uint8_h g_rxIndex = 0;
 
-/* دالة مساعدة لإرسال سلسلة نصية عبر الـ UART */
 static void CON_SendString(const char *str)
 {
     while (*str != '\0')
@@ -20,10 +18,8 @@ static void CON_SendString(const char *str)
     }
 }
 
-/* دالة تحليل وتنفيذ الأوامر المستقبلة */
 static void CON_ParseAndExecute(char *cmdBuffer)
 {
-    /* أمر قراءة الحساسات وعرض القراءات */
     if (strcmp(cmdBuffer, "read") == 0 || strcmp(cmdBuffer, "READ") == 0)
     {
         uint16_h tempRaw = 0, soilRaw = 0, lightRaw = 0;
@@ -46,7 +42,6 @@ static void CON_ParseAndExecute(char *cmdBuffer)
             CON_SendString("\r\nError: Failed to read sensors!\r\n");
         }
     }
-    /* أمر المساعدة */
     else if (strcmp(cmdBuffer, "help") == 0 || strcmp(cmdBuffer, "HELP") == 0)
     {
         CON_SendString("\r\nAvailable Commands:\r\n");
@@ -78,29 +73,25 @@ CONSOLE_Status_t CON_Process(void)
 {
     uint8_h receivedByte = 0;
 
-    /* استقبال البايتات من الـ UART بشكل غير حاجب */
     if (UART_ReceiveByteNonBlocking(&receivedByte) == E_OK)
     {
-        /* عند ضغط Enter (\r أو \n) */
         if (receivedByte == '\r' || receivedByte == '\n')
         {
             g_rxBuffer[g_rxIndex] = '\0';
             CON_ParseAndExecute(g_rxBuffer);
             g_rxIndex = 0;
         }
-        /* التعامل مع Backspace لإلغاء الحرف الاخير */
         else if ((receivedByte == '\b' || receivedByte == 0x7F) && (g_rxIndex > 0))
         {
             g_rxIndex--;
             CON_SendString("\b \b");
         }
-        /* تجميع الأحرف داخل الـ Buffer */
         else if (g_rxIndex < (CONSOLE_RX_BUFFER_SIZE - 1))
         {
-            if (receivedByte >= 32 && receivedByte <= 126) /* الأحرف القابلة للطباعة */
+            if (receivedByte >= 32 && receivedByte <= 126)
             {
                 g_rxBuffer[g_rxIndex++] = (char)receivedByte;
-                UART_SendByte(receivedByte); /* Echo للحرف على الشاشة */
+                UART_SendByte(receivedByte);
             }
         }
     }

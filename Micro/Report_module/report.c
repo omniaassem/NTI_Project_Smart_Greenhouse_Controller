@@ -3,10 +3,9 @@
 #include "../../MCL/UART/uart_interface.h"
 #include "../Sensors/Sensors_Driver.h"
 #include "../../HAL/Actuators/Actuators_Driver.h"
-#include "../FSM/greenhouse_fsm.h"
+#include "../Greenhouse_FSM/greenhouse_fsm.h"
 #include <stdio.h>
 
-/* دالة مساعدة لإرسال السلاسل النصية عبر UART */
 static void RPT_SendString(const char *str)
 {
     while (*str != '\0')
@@ -16,7 +15,6 @@ static void RPT_SendString(const char *str)
     }
 }
 
-/* تحويل حالة FSM إلى نص قابل للطباعة */
 static const char* RPT_GetStateName(FSM_State_t state)
 {
     switch (state)
@@ -41,11 +39,10 @@ REPORT_Status_t RPT_SendStatus(void)
     uint16_h rawTemp = 0, rawSoil = 0, rawLight = 0;
     uint8_h tempC = 0, soilPct = 0, lightPct = 0;
 
-    Actuator_State_t fanState = ACTUATOR_STATE_OFF;
-    Actuator_State_t pumpState = ACTUATOR_STATE_OFF;
-    Actuator_State_t lightState = ACTUATOR_STATE_OFF;
+    ActuatorStateType fanState = ACT_STATE_OFF;
+    ActuatorStateType pumpState = ACT_STATE_OFF;
+    ActuatorStateType lightState = ACT_STATE_OFF;
 
-    /* 1. قراءة بيانات الحساسات */
     if (Sensors_ReadRaw(&rawTemp, &rawSoil, &rawLight) != E_OK)
     {
         return REPORT_ERROR;
@@ -55,15 +52,12 @@ REPORT_Status_t RPT_SendStatus(void)
     (void)Sensors_ScalePct(rawSoil, &soilPct);
     (void)Sensors_ScalePct(rawLight, &lightPct);
 
-    /* 2. قراءة حالات المشغلات */
-    (void)Actuators_GetFanState(&fanState);
-    (void)Actuators_GetPumpState(&pumpState);
-    (void)Actuators_GetLightState(&lightState);
+    (void)ACT_Get(ACTUATOR_FAN, &fanState);
+    (void)ACT_Get(ACTUATOR_PUMP, &pumpState);
+    (void)ACT_Get(ACTUATOR_LAMP, &lightState);
 
-    /* 3. قراءة حالة آلة الحالات (FSM) */
     FSM_State_t fsmState = FSM_GetState();
 
-    /* 4. تنسيق التقرير وإرساله عبر الـ UART */
     char reportBuffer[128];
     snprintf(reportBuffer, sizeof(reportBuffer),
              "\r\n--- [GREENHOUSE TELEMETRY REPORT] ---\r\n"
@@ -73,9 +67,9 @@ REPORT_Status_t RPT_SendStatus(void)
              "-------------------------------------\r\n",
              RPT_GetStateName(fsmState),
              tempC, soilPct, lightPct,
-             (fanState == ACTUATOR_STATE_ON) ? "ON" : "OFF",
-             (pumpState == ACTUATOR_STATE_ON) ? "ON" : "OFF",
-             (lightState == ACTUATOR_STATE_ON) ? "ON" : "OFF");
+             (fanState == ACT_STATE_ON) ? "ON" : "OFF",
+             (pumpState == ACT_STATE_ON) ? "ON" : "OFF",
+             (lightState == ACT_STATE_ON) ? "ON" : "OFF");
 
     RPT_SendString(reportBuffer);
 
