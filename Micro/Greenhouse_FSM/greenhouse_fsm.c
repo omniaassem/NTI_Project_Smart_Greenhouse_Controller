@@ -17,7 +17,15 @@
 #define CRITICAL_LOW_SOIL_PCT     10u
 
 static FSM_State_t currentState = FSM_STATE_INIT;
-static uint8_h lastModeBtnState = 1; // يبدأ 1 لأن الزر Pull-up في وضع عدم الضغط
+
+/* متغيرات لمتابعة حالة الأزرار ومنع التكرار (Debounce & Edge Detection) */
+static uint8_h lastModeBtnState = 1;
+static uint8_h lastAlarmBtnState = 1;
+static uint8_h lastSaveBtnState = 1;
+
+/* متغيرات لحفظ حالة التشغيل اليدوي (Toggle States) */
+static ActuatorStateType manualAlarmState = ACT_STATE_OFF;
+static ActuatorStateType manualLampState = ACT_STATE_OFF;
 
 static uint8_h FSM_CheckAlarmConditions(void)
 {
@@ -49,8 +57,9 @@ FSM_Status_t FSM_Init(void)
         return FSM_ERROR;
     }
 
-    /* تهيئة أطراف الأزرار كمدخلات Inputs على PORTD */
+    /* تهيئة أطراف الأزرار كمدخلات Inputs على PORTD مع تفعيل الـ Pull-up */
     DDRD &= ~((1 << BTN_ALARM_PIN) | (1 << BTN_MODE_PIN) | (1 << BTN_SAVE_PIN));
+    PORTD |= (1 << BTN_ALARM_PIN) | (1 << BTN_MODE_PIN) | (1 << BTN_SAVE_PIN);
 
     currentState = FSM_STATE_AUTO;
     return FSM_OK;
@@ -60,16 +69,16 @@ FSM_Status_t FSM_Run(void)
 {
     (void)CON_Process();
 
-    /* قراءة زر الـ Mode (Active-Low على PD3) للتبديل بين Auto و Manual */
+    /* قراءة زر الـ Mode للتبديل بين Auto و Manual */
     uint8_h currentModeBtnState = (PIND & (1 << BTN_MODE_PIN)) ? 1 : 0;
-    if (currentModeBtnState == 0 && lastModeBtnState == 1) /* عند الضغط (Falling Edge) */
+    if (currentModeBtnState == 0 && lastModeBtnState == 1)
     {
         if (currentState == FSM_STATE_AUTO) {
             currentState = FSM_STATE_MANUAL;
         } else if (currentState == FSM_STATE_MANUAL) {
             currentState = FSM_STATE_AUTO;
         }
-        _delay_ms(50); /* Debounce */
+        _delay_ms(50);
     }
     lastModeBtnState = currentModeBtnState;
 
@@ -88,20 +97,28 @@ FSM_Status_t FSM_Run(void)
             break;
 
         case FSM_STATE_MANUAL:
-            /* التحكم اليدوي عبر الأزرار (Active-Low) */
-            
-            /* زر Alarm على PD2 يتحكم في الـ Alarm على B3 */
-            if (!(PIND & (1 << BTN_ALARM_PIN))) {
-                (void)ACT_Set(ACTUATOR_ALARM, ACT_STATE_ON);
-            } else {
-                (void)ACT_Set(ACTUATOR_ALARM, ACT_STATE_OFF);
+            /* التحكم اليدوي بنظام التبديل (Toggle) للـ Alarm على B3 */
+            {
+                uint8_h currentAlarmBtn = (PIND & (1 << BTN_ALARM_PIN)) ? 1 : 0;
+                if (currentAlarmBtn == 0 && lastAlarmBtnState == 1)
+                {
+                    manualAlarmState = (manualAlarmState == ACT_STATE_ON) ? ACT_STATE_OFF : ACT_STATE_ON;
+                    _delay_ms(50);
+                }
+                lastAlarmBtnState = currentAlarmBtn;
+                (void)ACT_Set(ACTUATOR_ALARM, manualAlarmState);
             }
 
-            /* زر Save على PD4 يتحكم في الـ Lamp على B2 */
-            if (!(PIND & (1 << BTN_SAVE_PIN))) {
-                (void)ACT_Set(ACTUATOR_LAMP, ACT_STATE_ON);
-            } else {
-                (void)ACT_Set(ACTUATOR_LAMP, ACT_STATE_OFF);
+            /* التحكم اليدوي بنظام التبديل (Toggle) للـ Lamp على B2 */
+            {
+                uint8_h currentSaveBtn = (PIND & (1 << BTN_SAVE_PIN)) ? 1 : 0;
+                if (currentSaveBtn == 0 && lastSaveBtnState == 1)
+                {
+                    manualLampState = (manualLampState == ACT_STATE_ON) ? ACT_STATE_OFF : ACT_STATE_ON;
+                    _delay_ms(50);
+                }
+                lastSaveBtnState = currentSaveBtn;
+                (void)ACT_Set(ACTUATOR_LAMP, manualLampState);
             }
             break;
 
