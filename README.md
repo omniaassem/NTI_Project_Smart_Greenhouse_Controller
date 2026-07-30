@@ -11,7 +11,7 @@
 | Field | Value |
 |-------|-------|
 | **Project code** | `PRJ-01-GREENHOUSE` |
-| **Team size** | 2 – 3 students |
+| **Team size** | 2  students |
 | **Build window** | Days 11 – 15 (Jul 26 – Jul 30, 2026) |
 | **Demo & submission** | July 30, 2026 |
 | **Dominant skill** | Multi-sensor closed-loop control with hysteresis |
