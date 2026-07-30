@@ -1,12 +1,21 @@
 #include "../../Service/STD_Types.h"
 #include "../../Service/Bit_Math.h"
-#include <avr/interrupt.h>
 #include "timer_registers.h"
 #include "timer_interface.h"
 
 /* ================================================================================
  *  TIMER DRIVER - IMPLEMENTATION (ATmega32)
  * ============================================================================== */
+
+/* ISR Vector definitions for ATmega32 GCC Compiler */
+void __vector_7(void)  __attribute__((signal)); /* TIMER2 COMP (Compare Match) */
+void __vector_8(void)  __attribute__((signal)); /* TIMER2 OVF  (Overflow)      */
+void __vector_9(void)  __attribute__((signal)); /* TIMER1 CAPT (Input Capture)  */
+void __vector_10(void) __attribute__((signal)); /* TIMER1 COMPA(Compare A)      */
+void __vector_11(void) __attribute__((signal)); /* TIMER1 COMPB(Compare B)      */
+void __vector_12(void) __attribute__((signal)); /* TIMER1 OVF  (Overflow)      */
+void __vector_14(void) __attribute__((signal)); /* TIMER0 COMP (Compare Match) */
+void __vector_15(void) __attribute__((signal)); /* TIMER0 OVF  (Overflow)      */
 
 /*
  * Callback storage: one slot per channel per interrupt source.
@@ -363,53 +372,32 @@ STD_ReturnType Timer_SetCallBack(Timer_ChannelType channel,
 
 void Timer_EnableGlobalInterrupt(void)
 {
-    SET_BIT(TIMER_SREG_REG, TIMER_GLOBAL_INT_BIT);   /* sei() */
+    SET_BIT(TIMER_SREG_REG, TIMER_GLOBAL_INT_BIT);   /* Enable global interrupts */
 }
 
 
 void Timer_DisableGlobalInterrupt(void)
 {
-    CLR_BIT(TIMER_SREG_REG, TIMER_GLOBAL_INT_BIT);   /* cli() */
+    CLR_BIT(TIMER_SREG_REG, TIMER_GLOBAL_INT_BIT);   /* Disable global interrupts */
 }
 
 
 /* ================================================================================
  *  INTERRUPT SERVICE ROUTINES
- *  Each vector dispatches to the registered callback if one is set.
+ *  Mapped to ATmega32 Vector table using standard GCC attributes.
  * ============================================================================== */
-ISR(TIMER0_OVF_vect)
+
+/* Timer2 Compare Match ISR */
+void __vector_7(void)
 {
-    if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_OVERFLOW] != NULL)
+    if (Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_COMPARE_MATCH] != NULL)
     {
-        Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_OVERFLOW]();
+        Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_COMPARE_MATCH]();
     }
 }
 
-ISR(TIMER0_COMP_vect)
-{
-    if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH] != NULL)
-    {
-        Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH]();
-    }
-}
-
-ISR(TIMER1_OVF_vect)
-{
-    if (Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_OVERFLOW] != NULL)
-    {
-        Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_OVERFLOW]();
-    }
-}
-
-ISR(TIMER1_COMPA_vect)
-{
-    if (Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_COMPARE_MATCH] != NULL)
-    {
-        Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_COMPARE_MATCH]();
-    }
-}
-
-ISR(TIMER2_OVF_vect)
+/* Timer2 Overflow ISR */
+void __vector_8(void)
 {
     if (Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_OVERFLOW] != NULL)
     {
@@ -417,10 +405,38 @@ ISR(TIMER2_OVF_vect)
     }
 }
 
-ISR(TIMER2_COMP_vect)
+/* Timer1 Compare Match A ISR */
+void __vector_10(void)
 {
-    if (Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_COMPARE_MATCH] != NULL)
+    if (Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_COMPARE_MATCH] != NULL)
     {
-        Timer_CallBacks[TIMER_CHANNEL_2][TIMER_INT_COMPARE_MATCH]();
+        Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_COMPARE_MATCH]();
+    }
+}
+
+/* Timer1 Overflow ISR */
+void __vector_12(void)
+{
+    if (Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_OVERFLOW] != NULL)
+    {
+        Timer_CallBacks[TIMER_CHANNEL_1][TIMER_INT_OVERFLOW]();
+    }
+}
+
+/* Timer0 Compare Match ISR */
+void __vector_14(void)
+{
+    if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH] != NULL)
+    {
+        Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH]();
+    }
+}
+
+/* Timer0 Overflow ISR */
+void __vector_15(void)
+{
+    if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_OVERFLOW] != NULL)
+    {
+        Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_OVERFLOW]();
     }
 }
