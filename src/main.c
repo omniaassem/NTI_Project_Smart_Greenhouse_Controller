@@ -13,7 +13,7 @@ static void DelayMs(uint16_h ms)
     {
         for (inner = 0U; inner < 6000U; ++inner)
         {
-            __asm__ volatile ("nop");
+            asm volatile ("nop");
         }
     }
 }
@@ -37,12 +37,10 @@ int main(void)
     DC_MotorHandleType Pump = {0};
     DC_MotorHandleType Fan = {0};
 
-  
     Pump.in1Port         = GPIO_PORTC;
     Pump.in1Pin          = GPIO_PIN0;
     Pump.in2Port         = GPIO_PORTC;
     Pump.in2Pin          = GPIO_PIN1;
-    Pump.pwmChannel      = DC_MOTOR_PWM_NONE;
     Pump.enPort          = GPIO_PORTD;
     Pump.enPin           = GPIO_PIN4;
     Pump.invertDirection = 0U;
@@ -51,7 +49,6 @@ int main(void)
     Fan.in1Pin           = GPIO_PIN2;
     Fan.in2Port          = GPIO_PORTC;
     Fan.in2Pin           = GPIO_PIN3;
-    Fan.pwmChannel       = DC_MOTOR_PWM_NONE;
     Fan.enPort           = GPIO_PORTD;
     Fan.enPin            = GPIO_PIN5;
     Fan.invertDirection  = 0U;
@@ -79,8 +76,6 @@ int main(void)
     while (1)
     {
         SendLine("Forward");
-        (void)DC_Motor_SetSpeed(&Pump, 70U);
-        (void)DC_Motor_SetSpeed(&Fan, 70U);
         (void)DC_Motor_Forward(&Pump);
         (void)DC_Motor_Forward(&Fan);
         DelayMs(2000U);
@@ -91,8 +86,6 @@ int main(void)
         DelayMs(1000U);
 
         SendLine("Backward");
-        (void)DC_Motor_SetSpeed(&Pump, 70U);
-        (void)DC_Motor_SetSpeed(&Fan, 70U);
         (void)DC_Motor_Backward(&Pump);
         (void)DC_Motor_Backward(&Fan);
         DelayMs(2000U);
