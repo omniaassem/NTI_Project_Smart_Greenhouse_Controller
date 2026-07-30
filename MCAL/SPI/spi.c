@@ -4,105 +4,224 @@
 #include "spi_interface.h"
 
 /* ================================================================================
- *  SPI DRIVER - IMPLEMENTATION SKELETON
- *  ------------------------------------------------------------------------------
- *  Each body lists the ordered steps to implement the function. Replace the
- *  numbered comments with the actual register manipulation code.
+ *  SPI DRIVER - IMPLEMENTATION
  * ============================================================================== */
 
-/*
- * Storage for the transfer-complete callback.
- * TODO: static SPI_CallBackType SPI_CallBack = NULL;
- */
+/* Register DDRB to set pin directions as mentioned in description */
+#define DDRB_REG  (*(volatile u8 *)0x37)
 
+/* Storage for the transfer-complete callback */
+static SPI_CallBackType SPI_CallBack = NULL;
+
+/* ISR Declaration for SPI Serial Transfer Complete */
+void __vector_12(void) __attribute__((signal));
 
 STD_ReturnType SPI_Init(const SPI_ConfigType *addConfig)
 {
-    /*
-     * STEP 1: Validate addConfig != NULL (else E_NOK).
-     *
-     * STEP 2: Set the SPI pin directions (via the GPIO driver or DDRB directly):
-     *   - Master role: MOSI (PB5), SCK (PB7), SS (PB4) as OUTPUT; MISO (PB6) as INPUT.
-     *   - Slave  role: MISO (PB6) as OUTPUT; MOSI, SCK, SS as INPUT.
-     *
-     * STEP 3: Select master/slave in SPCR:
-     *   - role == SPI_MASTER -> SET_BIT(SPCR, SPI_MSTR_BIT)
-     *   - role == SPI_SLAVE  -> CLR_BIT(SPCR, SPI_MSTR_BIT)
-     *
-     * STEP 4: Clock polarity: copy addConfig->polarity into CPOL bit of SPCR.
-     * STEP 5: Clock phase:    copy addConfig->phase    into CPHA bit of SPCR.
-     * STEP 6: Data order:     copy addConfig->dataOrder into DORD bit of SPCR.
-     *
-     * STEP 7: Clock rate (master only). The clockRate value encodes SPI2X:SPR1:SPR0:
-     *   - Write SPR1:SPR0 (low 2 bits) into SPCR.
-     *   - Write SPI2X (bit 2 of clockRate) into SPSR.
-     *
-     * STEP 8: Enable the peripheral: SET_BIT(SPCR, SPI_SPE_BIT).
-     * STEP 9: Return E_OK.
-     */
-    return E_NOK;
-}
+    STD_ReturnType local_Status = E_OK;
 
+    /* STEP 1: Validate input configuration pointer */
+    if (addConfig == NULL)
+    {
+        local_Status = E_NOK;
+    }
+    else
+    {
+        /* STEP 2: Configure SPI pin directions based on Role */
+        if (addConfig->role == SPI_MASTER)
+        {
+            /* Master: MOSI (PB5), SCK (PB7), SS (PB4) as Output; MISO (PB6) as Input */
+            SET_BIT(DDRB_REG, SPI_MOSI_PIN);
+            SET_BIT(DDRB_REG, SPI_SCK_PIN);
+            SET_BIT(DDRB_REG, SPI_SS_PIN);
+            CLR_BIT(DDRB_REG, SPI_MISO_PIN);
+
+            /* STEP 3: Select Master mode */
+            SET_BIT(SPI_SPCR_REG, SPI_MSTR_BIT);
+
+            /* STEP 7: Clock rate configuration (Master mode only) */
+            /* SPR1:SPR0 bits (Low 2 bits of clockRate) */
+            if (GET_BIT(addConfig->clockRate, 0) == 1U)
+            {
+                SET_BIT(SPI_SPCR_REG, SPI_SPR0_BIT);
+            }
+            else
+            {
+                CLR_BIT(SPI_SPCR_REG, SPI_SPR0_BIT);
+            }
+
+            if (GET_BIT(addConfig->clockRate, 1) == 1U)
+            {
+                SET_BIT(SPI_SPCR_REG, SPI_SPR1_BIT);
+            }
+            else
+            {
+                CLR_BIT(SPI_SPCR_REG, SPI_SPR1_BIT);
+            }
+
+            /* SPI2X bit (bit 2 of clockRate) */
+            if (GET_BIT(addConfig->clockRate, 2) == 1U)
+            {
+                SET_BIT(SPI_SPSR_REG, SPI_SPI2X_BIT);
+            }
+            else
+            {
+                CLR_BIT(SPI_SPSR_REG, SPI_SPI2X_BIT);
+            }
+        }
+        else if (addConfig->role == SPI_SLAVE)
+        {
+            /* Slave: MISO (PB6) as Output; MOSI, SCK, SS as Input */
+            SET_BIT(DDRB_REG, SPI_MISO_PIN);
+            CLR_BIT(DDRB_REG, SPI_MOSI_PIN);
+            CLR_BIT(DDRB_REG, SPI_SCK_PIN);
+            CLR_BIT(DDRB_REG, SPI_SS_PIN);
+
+            /* STEP 3: Select Slave mode */
+            CLR_BIT(SPI_SPCR_REG, SPI_MSTR_BIT);
+        }
+        else
+        {
+            local_Status = E_NOK;
+        }
+
+        if (local_Status == E_OK)
+        {
+            /* STEP 4: Clock polarity (CPOL) */
+            if (addConfig->polarity == SPI_CPOL_IDLE_HIGH)
+            {
+                SET_BIT(SPI_SPCR_REG, SPI_CPOL_BIT);
+            }
+            else
+            {
+                CLR_BIT(SPI_SPCR_REG, SPI_CPOL_BIT);
+            }
+
+            /* STEP 5: Clock phase (CPHA) */
+            if (addConfig->phase == SPI_CPHA_SAMPLE_TRAILING)
+            {
+                SET_BIT(SPI_SPCR_REG, SPI_CPHA_BIT);
+            }
+            else
+            {
+                CLR_BIT(SPI_SPCR_REG, SPI_CPHA_BIT);
+            }
+
+            /* STEP 6: Data order (DORD) */
+            if (addConfig->dataOrder == SPI_LSB_FIRST)
+            {
+                SET_BIT(SPI_SPCR_REG, SPI_DORD_BIT);
+            }
+            else
+            {
+                CLR_BIT(SPI_SPCR_REG, SPI_DORD_BIT);
+            }
+
+            /* STEP 8: Enable SPI Peripheral */
+            SET_BIT(SPI_SPCR_REG, SPI_SPE_BIT);
+        }
+    }
+
+    return local_Status;
+}
 
 STD_ReturnType SPI_DeInit(void)
 {
-    /*
-     * STEP 1: Disable the module: CLR_BIT(SPI_SPCR_REG, SPI_SPE_BIT).
-     * STEP 2: Optionally clear SPIE to disable the SPI interrupt.
-     * STEP 3: Return E_OK.
-     */
-    return E_NOK;
-}
+    /* STEP 1: Disable SPI Module */
+    CLR_BIT(SPI_SPCR_REG, SPI_SPE_BIT);
 
+    /* STEP 2: Disable SPI Interrupt */
+    CLR_BIT(SPI_SPCR_REG, SPI_SPIE_BIT);
+
+    return E_OK;
+}
 
 STD_ReturnType SPI_Transceive(uint8_h txByte, uint8_h *puint8Rx)
 {
-    /*
-     * STEP 1: Start the transfer by writing the byte to the data register:
-     *         SPI_SPDR_REG = txByte;
-     * STEP 2: Busy-wait for the transfer-complete flag:
-     *         while ( GET_BIT(SPI_SPSR_REG, SPI_SPIF_BIT) == 0 ) { }
-     *         (Reading SPSR then SPDR clears SPIF.)
-     * STEP 3: Read the received byte:
-     *         if (puint8Rx != NULL) *puint8Rx = SPI_SPDR_REG;
-     *         else                  (void)SPI_SPDR_REG;   // still read to clear flag
-     * STEP 4: Return E_OK.
-     */
-    return E_NOK;
-}
+    /* STEP 1: Write data to register to start transmission */
+    SPI_SPDR_REG = txByte;
 
+    /* STEP 2: Busy-wait until transfer complete flag (SPIF) is set */
+    while (GET_BIT(SPI_SPSR_REG, SPI_SPIF_BIT) == 0U)
+    {
+        /* Busy wait */
+    }
+
+    /* STEP 3: Read received byte */
+    if (puint8Rx != NULL)
+    {
+        *puint8Rx = SPI_SPDR_REG;
+    }
+    else
+    {
+        /* Dummy read to clear flag if pointer is NULL */
+        (void)SPI_SPDR_REG;
+    }
+
+    return E_OK;
+}
 
 STD_ReturnType SPI_SendByte(uint8_h txByte)
 {
-    /*
-     * STEP 1: Call SPI_Transceive(txByte, NULL) and return its status.
-     */
-    return E_NOK;
+    /* STEP 1: Call transceive and discard received byte */
+    return SPI_Transceive(txByte, NULL);
 }
-
 
 STD_ReturnType SPI_SendString(const uint8_h *pString)
 {
-    /*
-     * STEP 1: Validate pString != NULL (else E_NOK).
-     * STEP 2: Loop over the string until '\0', calling SPI_SendByte() for each char.
-     * STEP 3: Return E_OK.
-     */
-    return E_NOK;
-}
+    STD_ReturnType local_Status = E_OK;
 
+    /* STEP 1: Validate string pointer */
+    if (pString == NULL)
+    {
+        local_Status = E_NOK;
+    }
+    else
+    {
+        /* STEP 2: Send string characters until null-terminator */
+        uint16_h i = 0U;
+        while (pString[i] != '\0')
+        {
+            (void)SPI_SendByte(pString[i]);
+            i++;
+        }
+    }
+
+    return local_Status;
+}
 
 STD_ReturnType SPI_SetCallBack(SPI_CallBackType callBack)
 {
-    /*
-     * STEP 1: Validate callBack != NULL (else E_NOK).
-     * STEP 2: Store it: SPI_CallBack = callBack;
-     * STEP 3: Enable the SPI interrupt: SET_BIT(SPI_SPCR_REG, SPI_SPIE_BIT).
-     * STEP 4: Return E_OK.
-     *
-     * NOTE: Provide the ISR here:
-     *       ISR(SPI_STC_vect){ uint8_h d = SPI_SPDR_REG;
-     *                          if (SPI_CallBack) SPI_CallBack(d); }
-     */
-    return E_NOK;
+    STD_ReturnType local_Status = E_OK;
+
+    /* STEP 1: Validate callback pointer */
+    if (callBack == NULL)
+    {
+        local_Status = E_NOK;
+    }
+    else
+    {
+        /* STEP 2: Store callback function */
+        SPI_CallBack = callBack;
+
+        /* STEP 3: Enable SPI Interrupt */
+        SET_BIT(SPI_SPCR_REG, SPI_SPIE_BIT);
+    }
+
+    return local_Status;
+}
+
+/* ================================================================================
+ *  INTERRUPT SERVICE ROUTINE (ISR)
+ * ============================================================================== */
+
+/* ISR for SPI Serial Transfer Complete */
+void __vector_12(void)
+{
+    uint8_h receivedByte = SPI_SPDR_REG;
+
+    if (SPI_CallBack != NULL)
+    {
+        SPI_CallBack(receivedByte);
+    }
 }
