@@ -36,6 +36,7 @@ static void UART_PrintLine(const char *label, uint16_h value)
     (void)UART_SendString((const uint8_h *)"\r\n");
 }
 
+/* مهمة المجدول لقراءة وإرسال قراءات الحساسات */
 static void SensorTask(void)
 {
     uint16_h rawTemp  = 0U;
@@ -49,7 +50,7 @@ static void SensorTask(void)
     {
         (void)Sensors_ScaleTempC(rawTemp, &tempC);
         (void)Sensors_ScalePct(rawSoil, &soilPct);
-        (void)Sensors_ScalePct(rawLight, &lightPct);
+        (void)Sensors_ScalePct(lightPct, &lightPct);
 
         UART_PrintLine("Raw Temp: ", rawTemp);
         UART_PrintLine("Temp C:  ", tempC);
@@ -73,6 +74,7 @@ int sensor_demo_main(void)
         .stopBits = UART_STOP_1BIT
     };
 
+    /* ضبط التايمر0 ليعطي مقاطعة كل 1ms لاستدعاء SCH_Tick */
     Timer_ConfigType timerConfig =
     {
         .channel      = TIMER_CHANNEL_0,
@@ -87,9 +89,7 @@ int sensor_demo_main(void)
     if (Sensors_Init() != E_OK)
     {
         (void)UART_SendString((const uint8_h *)"Sensor init failed\r\n");
-        while (1)
-        {
-        }
+        while (1) { }
     }
 
     (void)SCH_Init();
@@ -97,23 +97,21 @@ int sensor_demo_main(void)
     if (Timer_Init(&timerConfig) != E_OK)
     {
         (void)UART_SendString((const uint8_h *)"Timer init failed\r\n");
-        while (1)
-        {
-        }
+        while (1) { }
     }
 
+    /* ربط الـ Callback الخاص بالتايمر بالمجدول */
     (void)Timer_SetCallBack(TIMER_CHANNEL_0,
                             TIMER_INT_COMPARE_MATCH,
                             SCH_Tick);
     (void)Timer_EnableInterrupt(TIMER_CHANNEL_0, TIMER_INT_COMPARE_MATCH);
     Timer_EnableGlobalInterrupt();
 
+    /* إضافة مهمة الحساسات لتعمل كل 1000ms (ثانية واحدة) */
     if (SCH_AddTask(SensorTask, 1000U) != E_OK)
     {
         (void)UART_SendString((const uint8_h *)"Scheduler task add failed\r\n");
-        while (1)
-        {
-        }
+        while (1) { }
     }
 
     (void)UART_SendString((const uint8_h *)"Scheduler running\r\n");
