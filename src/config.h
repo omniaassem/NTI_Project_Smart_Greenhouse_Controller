@@ -3,12 +3,12 @@
 
 #include "../MCAL/ADC/adc_interface.h"
 
-/* Sensor ADC channels */
+/* Sensor ADC channels configuration */
 #define SENSOR_TEMP_CHANNEL   ADC_CHANNEL0
 #define SENSOR_SOIL_CHANNEL   ADC_CHANNEL1
 #define SENSOR_LIGHT_CHANNEL  ADC_CHANNEL2
 
-/* ADC reference / prescaler for sensor sampling */
+/* ADC reference & prescaler for sensor sampling */
 #define SENSOR_ADC_REFERENCE  ADC_REF_AVCC
 #define SENSOR_ADC_PRESCALER  ADC_PRESCALER_64
 
