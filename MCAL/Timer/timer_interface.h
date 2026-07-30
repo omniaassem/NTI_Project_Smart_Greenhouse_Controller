@@ -194,5 +194,5 @@ void Timer_EnableGlobalInterrupt(void);
  * @brief  Clears the global interrupt enable bit (I-bit of SREG). Equivalent to cli().
  */
 void Timer_DisableGlobalInterrupt(void);
-
+uint16_h Timer_GetTick(void);
 #endif /* TIMER_INTERFACE_H */

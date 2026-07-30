@@ -8,6 +8,7 @@
  * ============================================================================== */
 
 /* ISR Vector definitions for ATmega32 standard GCC Compiler (AVR-Libc) */
+volatile uint16_h g_timerTick = 0;
 void __vector_4(void)  __attribute__((signal)); /* TIMER2 COMP (Compare Match) */
 void __vector_5(void)  __attribute__((signal)); /* TIMER2 OVF  (Overflow)      */
 void __vector_7(void)  __attribute__((signal)); /* TIMER1 COMPA(Compare A)      */
@@ -421,8 +422,11 @@ void __vector_9(void)
 }
 
 /* Timer0 Compare Match ISR (__vector_10) */
+
 void __vector_10(void)
 {
+    g_timerTick++;
+
     if (Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH] != NULL)
     {
         Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_COMPARE_MATCH]();
@@ -436,4 +440,8 @@ void __vector_11(void)
     {
         Timer_CallBacks[TIMER_CHANNEL_0][TIMER_INT_OVERFLOW]();
     }
+}
+uint16_h Timer_GetTick(void)
+{
+    return g_timerTick;
 }

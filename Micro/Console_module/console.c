@@ -1,6 +1,6 @@
 #include "console.h"
 #include "../../Service/STD_Types.h"
-#include "../../MCL/UART/uart_interface.h"
+#include "../../MCAL/UART/uart_interface.h"
 #include "../Sensors/Sensors_Driver.h"
 
 
