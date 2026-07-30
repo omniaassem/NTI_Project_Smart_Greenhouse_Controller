@@ -42,6 +42,7 @@ REPORT_Status_t RPT_SendStatus(void)
     ActuatorStateType fanState = ACT_STATE_OFF;
     ActuatorStateType pumpState = ACT_STATE_OFF;
     ActuatorStateType lightState = ACT_STATE_OFF;
+    ActuatorStateType alarmState = ACT_STATE_OFF;
 
     if (Sensors_ReadRaw(&rawTemp, &rawSoil, &rawLight) != E_OK)
     {
@@ -50,26 +51,28 @@ REPORT_Status_t RPT_SendStatus(void)
 
     (void)Sensors_ScaleTempC(rawTemp, &tempC);
     (void)Sensors_ScalePct(rawSoil, &soilPct);
-    (void)Sensors_ScalePct(rawLight, &lightPct);
+    (void)Sensors_ScalePct(lightPct, &lightPct);
 
     (void)ACT_Get(ACTUATOR_FAN, &fanState);
     (void)ACT_Get(ACTUATOR_PUMP, &pumpState);
     (void)ACT_Get(ACTUATOR_LAMP, &lightState);
+    (void)ACT_Get(ACTUATOR_ALARM, &alarmState);
 
     FSM_State_t fsmState = FSM_GetState();
 
-    char reportBuffer[128];
+    char reportBuffer[200];
     snprintf(reportBuffer, sizeof(reportBuffer),
              "\r\n--- [GREENHOUSE TELEMETRY REPORT] ---\r\n"
              "FSM Mode : %s\r\n"
              "Sensors  : Temp=%u C | Soil=%u%% | Light=%u%%\r\n"
-             "Actuators: Fan=%s | Pump=%s | Light=%s\r\n"
+             "Actuators: Fan=%s | Pump=%s | Lamp=%s | Alarm=%s\r\n"
              "-------------------------------------\r\n",
              RPT_GetStateName(fsmState),
              tempC, soilPct, lightPct,
              (fanState == ACT_STATE_ON) ? "ON" : "OFF",
              (pumpState == ACT_STATE_ON) ? "ON" : "OFF",
-             (lightState == ACT_STATE_ON) ? "ON" : "OFF");
+             (lightState == ACT_STATE_ON) ? "ON" : "OFF",
+             (alarmState == ACT_STATE_ON) ? "ON" : "OFF");
 
     RPT_SendString(reportBuffer);
 

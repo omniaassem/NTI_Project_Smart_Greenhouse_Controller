@@ -5,25 +5,19 @@
 #include "../../HAL/Actuators/Actuators_Driver.h"
 #include "../../HAL/Sensors/Sensors_Driver.h"
 
-/* --- NEW: ضفنا المكتبات دي عشان نقرأ الأزرار ونعمل Debounce --- */
 #include <avr/io.h>
 #include <util/delay.h>
 
-/* تعريف أطراف الأزرار بناءً على التوصيل في المحاكاة (PORTD) */
+/* تعريف أطراف الأزرار بناءً على الرسمة (Active-Low) على PORTD */
 #define BTN_ALARM_PIN   PD2
 #define BTN_MODE_PIN    PD3
 #define BTN_SAVE_PIN    PD4
-#define BTN_OPEN_PIN    PD5
-/* ------------------------------------------------------------- */
 
 #define CRITICAL_HIGH_TEMP_C      45u
 #define CRITICAL_LOW_SOIL_PCT     10u
 
 static FSM_State_t currentState = FSM_STATE_INIT;
-
-/* --- NEW: متغير لحفظ حالة زرار الـ Mode للتبديل (Toggle) --- */
-static uint8_h lastModeBtnState = 0;
-/* ---------------------------------------------------------- */
+static uint8_h lastModeBtnState = 1; // يبدأ 1 لأن الزر Pull-up في وضع عدم الضغط
 
 static uint8_h FSM_CheckAlarmConditions(void)
 {
@@ -55,9 +49,8 @@ FSM_Status_t FSM_Init(void)
         return FSM_ERROR;
     }
 
-    /* --- NEW: تهيئة أطراف الأزرار كمدخلات (Inputs) --- */
-    DDRD &= ~((1 << BTN_ALARM_PIN) | (1 << BTN_MODE_PIN) | (1 << BTN_SAVE_PIN) | (1 << BTN_OPEN_PIN));
-    /* ------------------------------------------------ */
+    /* تهيئة أطراف الأزرار كمدخلات Inputs على PORTD */
+    DDRD &= ~((1 << BTN_ALARM_PIN) | (1 << BTN_MODE_PIN) | (1 << BTN_SAVE_PIN));
 
     currentState = FSM_STATE_AUTO;
     return FSM_OK;
@@ -67,19 +60,18 @@ FSM_Status_t FSM_Run(void)
 {
     (void)CON_Process();
 
-    /* --- NEW: قراءة زرار الـ Mode للتبديل بين Auto و Manual --- */
+    /* قراءة زر الـ Mode (Active-Low على PD3) للتبديل بين Auto و Manual */
     uint8_h currentModeBtnState = (PIND & (1 << BTN_MODE_PIN)) ? 1 : 0;
-    if (currentModeBtnState == 1 && lastModeBtnState == 0) /* تم الضغط على الزر (Rising Edge) */
+    if (currentModeBtnState == 0 && lastModeBtnState == 1) /* عند الضغط (Falling Edge) */
     {
         if (currentState == FSM_STATE_AUTO) {
             currentState = FSM_STATE_MANUAL;
         } else if (currentState == FSM_STATE_MANUAL) {
             currentState = FSM_STATE_AUTO;
         }
-        _delay_ms(50); /* Debounce بسيط */
+        _delay_ms(50); /* Debounce */
     }
     lastModeBtnState = currentModeBtnState;
-    /* --------------------------------------------------------- */
 
     if (currentState != FSM_STATE_ALARM && FSM_CheckAlarmConditions())
     {
@@ -96,35 +88,28 @@ FSM_Status_t FSM_Run(void)
             break;
 
         case FSM_STATE_MANUAL:
-            /* --- NEW: تشغيل المشغلات يدوياً بناءً على الأزرار --- */
+            /* التحكم اليدوي عبر الأزرار (Active-Low) */
             
-            /* زر Open يشغل الطلمبة (Pump) */
-            if (PIND & (1 << BTN_OPEN_PIN)) {
-                (void)ACT_Set(ACTUATOR_PUMP, ACT_STATE_ON);
+            /* زر Alarm على PD2 يتحكم في الـ Alarm على B3 */
+            if (!(PIND & (1 << BTN_ALARM_PIN))) {
+                (void)ACT_Set(ACTUATOR_ALARM, ACT_STATE_ON);
             } else {
-                (void)ACT_Set(ACTUATOR_PUMP, ACT_STATE_OFF);
+                (void)ACT_Set(ACTUATOR_ALARM, ACT_STATE_OFF);
             }
 
-            /* زر Save يشغل المروحة (Fan) */
-            if (PIND & (1 << BTN_SAVE_PIN)) {
-                (void)ACT_Set(ACTUATOR_FAN, ACT_STATE_ON);
-            } else {
-                (void)ACT_Set(ACTUATOR_FAN, ACT_STATE_OFF);
-            }
-            
-            /* زر Alarm يشغل اللمبة (Lamp) */
-            if (PIND & (1 << BTN_ALARM_PIN)) {
+            /* زر Save على PD4 يتحكم في الـ Lamp على B2 */
+            if (!(PIND & (1 << BTN_SAVE_PIN))) {
                 (void)ACT_Set(ACTUATOR_LAMP, ACT_STATE_ON);
             } else {
                 (void)ACT_Set(ACTUATOR_LAMP, ACT_STATE_OFF);
             }
-            /* --------------------------------------------------- */
             break;
 
         case FSM_STATE_ALARM:
             (void)ACT_Set(ACTUATOR_PUMP, ACT_STATE_OFF);
             (void)ACT_Set(ACTUATOR_FAN, ACT_STATE_ON);
             (void)ACT_Set(ACTUATOR_LAMP, ACT_STATE_OFF);
+            (void)ACT_Set(ACTUATOR_ALARM, ACT_STATE_ON);
             
             if (!FSM_CheckAlarmConditions())
             {
